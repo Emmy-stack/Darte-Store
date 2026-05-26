@@ -64,12 +64,12 @@ export default function StoreManageProducts() {
 
     return (
         <>
-            <h1 className="text-2xl text-slate-500 mb-5">Manage <span className="text-slate-800 font-medium">Products</span></h1>
+            <h1 className="text-2xl text-slate-500 dark:text-slate-400 mb-5">Manage <span className="text-slate-800 dark:text-slate-200 font-medium">Products</span></h1>
             {products.length === 0 ? (
                 <p className="text-slate-400 mt-10">No products found. Add your first product to get started!</p>
             ) : (
-            <table className="w-full max-w-4xl text-left  ring ring-slate-200  rounded overflow-hidden text-sm">
-                <thead className="bg-slate-50 text-gray-700 uppercase tracking-wider">
+            <table className="w-full max-w-4xl text-left ring ring-slate-200 dark:ring-slate-800 rounded overflow-hidden text-sm">
+                <thead className="bg-slate-50 dark:bg-slate-900 text-gray-700 dark:text-slate-200 uppercase tracking-wider">
                     <tr>
                         <th className="px-4 py-3">Name</th>
                         <th className="px-4 py-3 hidden md:table-cell">Description</th>
@@ -78,16 +78,16 @@ export default function StoreManageProducts() {
                         <th className="px-4 py-3">Actions</th>
                     </tr>
                 </thead>
-                <tbody className="text-slate-700">
+                <tbody className="text-slate-700 dark:text-slate-300">
                     {products.map((product) => (
-                        <tr key={product.id} className="border-t border-gray-200 hover:bg-gray-50">
+                        <tr key={product.id} className="border-t border-gray-200 dark:border-slate-850 hover:bg-gray-50 dark:hover:bg-slate-800/50">
                             <td className="px-4 py-3">
                                 <div className="flex gap-2 items-center">
                                     <Image width={40} height={40} className='p-1 shadow rounded cursor-pointer' src={product.images[0]} alt="" />
                                     {product.name}
                                 </div>
                             </td>
-                            <td className="px-4 py-3 max-w-md text-slate-600 hidden md:table-cell truncate">{product.description}</td>
+                            <td className="px-4 py-3 max-w-md text-slate-600 dark:text-slate-400 hidden md:table-cell truncate">{product.description}</td>
                             <td className="px-4 py-3 hidden md:table-cell">{currency}{formatPrice(product.mrp)}</td>
                             <td className="px-4 py-3">{currency}{formatPrice(displayProductPrice(product))}</td>
                             <td className="px-4 py-3 text-center">
