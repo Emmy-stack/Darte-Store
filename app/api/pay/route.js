@@ -241,28 +241,14 @@ export async function POST(request) {
             }
 
             if (subaccountId) {
-                // Calculate their exact flat share
-                let flatSplitAmount = 0;
-                const normalizedSplit = payoutAccount.splitType === "percentage"
-                    ? normalizePercentageSplitValue(payoutAccount.splitValue)
-                    : payoutAccount.splitValue;
-
-                if (payoutAccount.splitType === "percentage") {
-                    flatSplitAmount = storeTotal * (normalizedSplit / 100);
-                } else {
-                    flatSplitAmount = Math.min(storeTotal, normalizedSplit);
-                }
-
-                // Format to 2 decimal places to comply with Flutterwave constraints
-                flatSplitAmount = Math.round(flatSplitAmount * 100) / 100;
-
-                if (flatSplitAmount > 0) {
-                    subaccounts.push({
-                        id: subaccountId,
-                        transaction_charge_type: "flat_subaccount",
-                        transaction_charge: flatSplitAmount
-                    });
-                }
+                // Enforce exactly 0.01 (1%) transaction charge for the platform, leaving 99% for the seller.
+                // We use transaction_split_ratio proportional to storeTotal to handle multi-vendor carts correctly.
+                subaccounts.push({
+                    id: subaccountId,
+                    transaction_charge_type: "percentage",
+                    transaction_charge: 0.01,
+                    transaction_split_ratio: storeTotal
+                });
             }
         }
 
@@ -281,12 +267,21 @@ export async function POST(request) {
                 description: `Payment for Order(s) ${orderIds.join(", ")}`,
                 logo: `${process.env.NEXT_PUBLIC_BASE_URL}/logo.png`,
             },
+            meta: [
+                {
+                    metaname: "rave_escrow_tx",
+                    metavalue: "1"
+                }
+            ]
         };
 
-        // Note: We create/ensure Flutterwave subaccounts for sellers (above),
-        // but do not split funds at checkout. The platform holds funds until
-        // buyer confirms delivery, then a transfer of the seller's share
-        // (default 99%) is initiated. This avoids double-paying sellers.
+        if (subaccounts.length > 0) {
+            flwPayload.subaccounts = subaccounts;
+        }
+
+        // Note: We initialize split payments at checkout with subaccounts and
+        // the rave_escrow_tx: "1" metadata to hold funds in escrow. The split
+        // funds are released to the subaccounts when the buyer confirms delivery.
 
         // Call Flutterwave to initialize transaction
         const response = await fetch("https://api.flutterwave.com/v3/payments", {
