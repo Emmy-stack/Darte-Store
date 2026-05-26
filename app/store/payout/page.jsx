@@ -201,9 +201,7 @@ export default function PayoutPage() {
             <div className="p-4 bg-slate-50 rounded-xl">
               <p className="text-xs text-slate-400 font-medium">SETTLEMENT PREFERENCE</p>
               <p className="text-lg font-semibold text-slate-700 mt-1">
-                {currentPayoutAccount.splitType === "percentage"
-                  ? `${currentPayoutAccount.splitValue}% Split Share`
-                  : `₦${currentPayoutAccount.splitValue} Flat Split`}
+                99% Payout Split
               </p>
             </div>
             <div className="p-4 bg-slate-50 rounded-xl">
@@ -261,40 +259,7 @@ export default function PayoutPage() {
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">Settlement Split Preference</label>
-              <select
-                value={splitType}
-                onChange={(e) => {
-                  setSplitType(e.target.value);
-                  setSplitValue(e.target.value === "percentage" ? 99 : 1000);
-                }}
-                className="w-full border border-slate-300 rounded-xl p-3 outline-none focus:ring-2 focus:ring-slate-200 transition bg-white"
-              >
-                <option value="percentage">Percentage-based Split (Recommended)</option>
-                <option value="flat">Flat-rate Fee Split</option>
-              </select>
-            </div>
 
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
-                {splitType === "percentage" ? "Your Split Percentage (%)" : "Your Flat Split Amount (NGN)"}
-              </label>
-              <input
-                type="number"
-                min={1}
-                max={splitType === "percentage" ? 100 : undefined}
-                placeholder={splitType === "percentage" ? "e.g. 99" : "e.g. 1000"}
-                value={splitValue}
-                onChange={(e) => setSplitValue(Math.max(1, Number(e.target.value)))}
-                className="w-full border border-slate-300 rounded-xl p-3 outline-none focus:ring-2 focus:ring-slate-200 transition"
-              />
-              <p className="text-xs text-slate-400 mt-2">
-                {splitType === "percentage"
-                  ? `You will receive ${splitValue}% of each sale. The platform takes ${100 - splitValue}% commission.`
-                  : `You will receive a flat amount of ₦${splitValue} per transaction. The platform keeps the remainder.`}
-              </p>
-            </div>
 
             {/* Resolved Name Confirmation Block */}
             {resolvedName && (

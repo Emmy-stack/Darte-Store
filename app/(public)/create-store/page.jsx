@@ -326,40 +326,10 @@ export default function CreateStore() {
                                 </div>
 
                                 <div>
-                                    <p className="mb-1 text-sm font-semibold">Settlement Split Preference</p>
-                                    <select
-                                        value={splitType}
-                                        onChange={(e) => {
-                                            setSplitType(e.target.value);
-                                            setSplitValue(e.target.value === "percentage" ? 99 : 1000);
-                                        }}
-                                        disabled={!isAddressComplete}
-                                        className="w-full border border-slate-300 rounded p-2 outline-none bg-white mb-4"
-                                    >
-                                        <option value="percentage">Percentage-based Split (Recommended)</option>
-                                        <option value="flat">Flat-rate Fee Split</option>
-                                    </select>
-                                </div>
-
-                                <div>
-                                    <p className="mb-1 text-sm font-semibold">
-                                        {splitType === "percentage" ? "Your Split Percentage (%)" : "Your Flat Split Amount (NGN)"}
-                                    </p>
-                                    <input
-                                        type="number"
-                                        min={1}
-                                        max={splitType === "percentage" ? 100 : undefined}
-                                        placeholder={splitType === "percentage" ? "e.g. 99" : "e.g. 1000"}
-                                        value={splitValue}
-                                        onChange={(e) => setSplitValue(Math.max(1, Number(e.target.value)))}
-                                        disabled={!isAddressComplete}
-                                        className="w-full border border-slate-300 rounded p-2 outline-none mb-4"
-                                    />
-                                    <p className="text-xs text-slate-400 -mt-2 mb-4">
-                                        {splitType === "percentage"
-                                            ? `You will receive ${splitValue}% of each sale. The platform takes ${100 - splitValue}% commission.`
-                                            : `You will receive a flat amount of ₦${splitValue} per transaction. The platform keeps the remainder.`}
-                                    </p>
+                                    <p className="mb-1 text-sm font-semibold text-slate-700">Settlement Split</p>
+                                    <div className="p-3 bg-slate-50 border border-slate-200 rounded text-sm text-slate-600">
+                                        Sellers receive <span className="font-semibold text-slate-800">99%</span> of all successful order payments. The platform takes a 1% commission.
+                                    </div>
                                 </div>
 
                                 {resolvedName && (
