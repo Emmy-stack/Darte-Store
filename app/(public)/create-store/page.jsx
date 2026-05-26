@@ -40,7 +40,7 @@ export default function CreateStore() {
     
     // Settlement Preferences
     const [splitType, setSplitType] = useState("percentage")
-    const [splitValue, setSplitValue] = useState(99)
+    const [splitValue, setSplitValue] = useState(98)
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -328,7 +328,7 @@ export default function CreateStore() {
                                 <div>
                                     <p className="mb-1 text-sm font-semibold text-slate-700">Settlement Split</p>
                                     <div className="p-3 bg-slate-50 border border-slate-200 rounded text-sm text-slate-600">
-                                        Sellers receive <span className="font-semibold text-slate-800">99%</span> of all successful order payments. The platform takes a 1% commission.
+                                        Sellers receive <span className="font-semibold text-slate-800">98%</span> of all successful order payments. The platform takes a 2% commission.
                                     </div>
                                 </div>
 

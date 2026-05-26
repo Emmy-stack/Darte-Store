@@ -18,7 +18,7 @@ export default function PayoutPage() {
   
   // Settlement Preferences
   const [splitType, setSplitType] = useState("percentage")
-  const [splitValue, setSplitValue] = useState(99)
+  const [splitValue, setSplitValue] = useState(98)
   
   const [loading, setLoading] = useState(true)
   const [loadingBanks, setLoadingBanks] = useState(false)
@@ -41,7 +41,7 @@ export default function PayoutPage() {
         setBankCode(data.payoutAccount.bankCode || "")
         setAccountNumber(data.payoutAccount.accountNumber || "")
         setSplitType(data.payoutAccount.splitType || "percentage")
-        setSplitValue(data.payoutAccount.splitValue || 99)
+        setSplitValue(data.payoutAccount.splitValue || 98)
       }
     } catch (error) {
       console.error("Failed to load payout account:", error)
@@ -183,7 +183,7 @@ export default function PayoutPage() {
                 setBankCode(currentPayoutAccount.bankCode)
                 setAccountNumber(currentPayoutAccount.accountNumber)
                 setSplitType(currentPayoutAccount.splitType || "percentage")
-                setSplitValue(currentPayoutAccount.splitValue || 99)
+                setSplitValue(currentPayoutAccount.splitValue || 98)
                 setIsEditing(true)
               }}
               className="px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-medium rounded-xl transition flex items-center gap-2 max-sm:w-full justify-center cursor-pointer"
@@ -201,7 +201,7 @@ export default function PayoutPage() {
             <div className="p-4 bg-slate-50 rounded-xl">
               <p className="text-xs text-slate-400 font-medium">SETTLEMENT PREFERENCE</p>
               <p className="text-lg font-semibold text-slate-700 mt-1">
-                99% Payout Split
+                98% Payout Split
               </p>
             </div>
             <div className="p-4 bg-slate-50 rounded-xl">

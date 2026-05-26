@@ -193,8 +193,8 @@ export async function POST(request) {
             if (!subaccountId && payoutAccount.bankCode && payoutAccount.accountNumber) {
                 console.log(`On-the-fly subaccount registration for Store ${storeId}`);
                 try {
-                    // Default to 99% seller share when splitValue is not defined
-                    const defaultSplitValue = 99;
+                    // Default to 98% seller share when splitValue is not defined
+                    const defaultSplitValue = 98;
                     const rawSplit = typeof payoutAccount.splitValue === 'number' ? payoutAccount.splitValue : defaultSplitValue;
                     const normalizedSplit = payoutAccount.splitType === "percentage" ? normalizePercentageSplitValue(rawSplit) : rawSplit;
                     const flwSplitValue = getFlutterwaveSplitValue(payoutAccount.splitType, normalizedSplit);
@@ -241,12 +241,12 @@ export async function POST(request) {
             }
 
             if (subaccountId) {
-                // Enforce exactly 0.01 (1%) transaction charge for the platform, leaving 99% for the seller.
+                // Enforce exactly 0.02 (2%) transaction charge for the platform, leaving 98% for the seller.
                 // We use transaction_split_ratio proportional to storeTotal to handle multi-vendor carts correctly.
                 subaccounts.push({
                     id: subaccountId,
                     transaction_charge_type: "percentage",
-                    transaction_charge: 0.01,
+                    transaction_charge: 0.02,
                     transaction_split_ratio: storeTotal
                 });
             }

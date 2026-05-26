@@ -227,12 +227,12 @@ export async function POST(request) {
             }
 
             if (subaccountId) {
-                // Enforce exactly 0.01 (1%) transaction charge for the platform, leaving 99% for the seller.
+                // Enforce exactly 0.02 (2%) transaction charge for the platform, leaving 98% for the seller.
                 // We use transaction_split_ratio proportional to storeTotal to handle multi-vendor carts correctly.
                 subaccounts.push({
                     id: subaccountId,
                     transaction_charge_type: "percentage",
-                    transaction_charge: 0.01,
+                    transaction_charge: 0.02,
                     transaction_split_ratio: storeTotal
                 });
             }

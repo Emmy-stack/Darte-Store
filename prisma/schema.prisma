@@ -209,7 +209,7 @@ model SellerPayoutAccount {
     isVerified    Boolean  @default(true)
     subaccountId  String?
     splitType     String   @default("percentage")
-    splitValue    Float    @default(99.0)
+    splitValue    Float    @default(98.0)
     createdAt     DateTime @default(now())
     updatedAt     DateTime @updatedAt
 

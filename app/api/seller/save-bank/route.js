@@ -60,8 +60,8 @@ export async function POST(request) {
 
         const { bankCode, bankName, accountNumber } = await request.json();
         const splitType = "percentage";
-        const splitValue = 99;
-        const normalizedSplitValue = 99;
+        const splitValue = 98;
+        const normalizedSplitValue = 98;
 
         if (!bankCode || !bankName || !accountNumber) {
             return NextResponse.json({ error: "Bank code, bank name, and account number are required" }, { status: 400 });
