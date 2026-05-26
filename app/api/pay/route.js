@@ -1,0 +1,320 @@
+import { getAuth } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
+import prisma from "@/lib/prisma";
+import { getFlutterwaveSplitValue, normalizePercentageSplitValue } from "@/lib/splitUtils";
+
+export async function POST(request) {
+    try {
+        const { userId } = getAuth(request);
+
+        if (!userId) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
+        const { addressId, couponCode } = await request.json();
+
+        if (!addressId) {
+            return NextResponse.json({ error: "Address is required" }, { status: 400 });
+        }
+
+        // Validate address
+        const address = await prisma.address.findFirst({
+            where: {
+                id: addressId,
+                userId,
+            },
+        });
+
+        if (!address) {
+            return NextResponse.json({ error: "Address not found or invalid" }, { status: 400 });
+        }
+
+        // Fetch user's cart and details
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+        });
+
+        if (!user) {
+            return NextResponse.json({ error: "User not found" }, { status: 400 });
+        }
+
+        const cart = user.cart || {};
+        const productIds = Object.keys(cart);
+
+        if (productIds.length === 0) {
+            return NextResponse.json({ error: "Your cart is empty" }, { status: 400 });
+        }
+
+        // Fetch actual products from database
+        const dbProducts = await prisma.product.findMany({
+            where: {
+                id: { in: productIds },
+            },
+        });
+
+        if (dbProducts.length === 0) {
+            return NextResponse.json({ error: "No matching products found in database" }, { status: 400 });
+        }
+
+        // Validate coupon if provided
+        let coupon = null;
+        if (couponCode) {
+            coupon = await prisma.coupon.findFirst({
+                where: {
+                    code: {
+                        equals: couponCode,
+                        mode: "insensitive",
+                    },
+                },
+            });
+
+            if (!coupon) {
+                return NextResponse.json({ error: "Invalid coupon code" }, { status: 400 });
+            }
+
+            if (coupon.expiresAt < new Date()) {
+                return NextResponse.json({ error: "Coupon has expired" }, { status: 400 });
+            }
+        }
+
+        // Group products/cart items by storeId
+        const itemsByStore = {};
+        for (const product of dbProducts) {
+            const quantity = cart[product.id];
+            if (quantity && quantity > 0) {
+                if (!itemsByStore[product.storeId]) {
+                    itemsByStore[product.storeId] = [];
+                }
+                itemsByStore[product.storeId].push({
+                    product,
+                    quantity,
+                    price: product.price,
+                });
+            }
+        }
+
+        const createdOrders = [];
+        let grandTotal = 0;
+
+        // Run in transaction to guarantee consistency
+        await prisma.$transaction(async (tx) => {
+            for (const [storeId, storeItems] of Object.entries(itemsByStore)) {
+                const storeSubtotal = storeItems.reduce(
+                    (sum, item) => sum + item.price * item.quantity,
+                    0
+                );
+
+                const storeTotal = coupon
+                    ? storeSubtotal * (1 - coupon.discount / 100)
+                    : storeSubtotal;
+
+                grandTotal += storeTotal;
+
+                // Create Order record with paymentMethod: FLUTTERWAVE
+                const order = await tx.order.create({
+                    data: {
+                        total: storeTotal,
+                        userId,
+                        storeId,
+                        addressId,
+                        paymentMethod: "FLUTTERWAVE",
+                        isPaid: false,
+                        isCouponUsed: !!coupon,
+                        coupon: coupon
+                            ? {
+                                  code: coupon.code,
+                                  discount: coupon.discount,
+                                  description: coupon.description,
+                              }
+                            : {},
+                        orderItems: {
+                            create: storeItems.map((item) => ({
+                                productId: item.product.id,
+                                quantity: item.quantity,
+                                price: item.price,
+                            })),
+                        },
+                    },
+                });
+
+                createdOrders.push(order);
+            }
+
+            // Clear the user's cart in database
+            await tx.user.update({
+                where: { id: userId },
+                data: { cart: {} },
+            });
+        }, { timeout: 60000 });
+
+        // Generate a clean, unique Flutterwave tx_ref (max length 100)
+        const tx_ref = "flw_tx_" + Math.random().toString(36).substring(2, 15) + "_" + Date.now();
+        const orderIds = createdOrders.map(o => o.id);
+
+        // Create Transaction record in DB
+        await prisma.transaction.create({
+            data: {
+                txRef: tx_ref,
+                amount: grandTotal,
+                currency: "NGN",
+                status: "pending",
+                orderIds: orderIds.join(","),
+            }
+        });
+
+        // 1. Identify all store IDs involved in the cart
+        const storeIds = Object.keys(itemsByStore);
+
+        // 2. Fetch payout accounts and linked stores
+        const payoutAccounts = await prisma.sellerPayoutAccount.findMany({
+            where: { storeId: { in: storeIds } },
+            include: { store: true }
+        });
+
+        const payoutMap = {};
+        for (const pa of payoutAccounts) {
+            payoutMap[pa.storeId] = pa;
+        }
+
+        // 3. Build subaccounts list dynamically
+        const subaccounts = [];
+        const isTestMode = process.env.FLUTTERWAVE_SECRET_KEY && process.env.FLUTTERWAVE_SECRET_KEY.startsWith("FLWSECK_TEST-");
+
+        for (const [storeId, storeItems] of Object.entries(itemsByStore)) {
+            const storeSubtotal = storeItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+            const storeTotal = coupon ? storeSubtotal * (1 - coupon.discount / 100) : storeSubtotal;
+
+            let payoutAccount = payoutMap[storeId];
+            if (!payoutAccount) continue; // Skip split if bank details not linked
+
+            let subaccountId = payoutAccount.subaccountId;
+
+            // Auto-register subaccount on-the-fly if missing but bank details exist (backward compatibility)
+            if (!subaccountId && payoutAccount.bankCode && payoutAccount.accountNumber) {
+                console.log(`On-the-fly subaccount registration for Store ${storeId}`);
+                try {
+                    // Default to 99% seller share when splitValue is not defined
+                    const defaultSplitValue = 99;
+                    const rawSplit = typeof payoutAccount.splitValue === 'number' ? payoutAccount.splitValue : defaultSplitValue;
+                    const normalizedSplit = payoutAccount.splitType === "percentage" ? normalizePercentageSplitValue(rawSplit) : rawSplit;
+                    const flwSplitValue = getFlutterwaveSplitValue(payoutAccount.splitType, normalizedSplit);
+                    const subRes = await fetch("https://api.flutterwave.com/v3/subaccounts", {
+                        method: "POST",
+                        headers: {
+                            Authorization: `Bearer ${process.env.FLUTTERWAVE_SECRET_KEY}`,
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({
+                            account_bank: payoutAccount.bankCode,
+                            account_number: payoutAccount.accountNumber,
+                            business_name: payoutAccount.store.name,
+                            business_email: payoutAccount.store.email,
+                            business_contact: payoutAccount.store.name,
+                            business_mobile: payoutAccount.store.contact,
+                            country: "NG",
+                            currency: "NGN",
+                            split_type: payoutAccount.splitType,
+                            split_value: flwSplitValue,
+                        }),
+                    });
+
+                    const subData = await subRes.json();
+                    if (subRes.ok && subData.status === "success") {
+                        subaccountId = subData.data.subaccount_id || subData.data.id;
+                        await prisma.sellerPayoutAccount.update({
+                            where: { id: payoutAccount.id },
+                            data: { subaccountId }
+                        });
+                    } else if (isTestMode) {
+                        subaccountId = "RS_MOCK_SUB_" + Math.random().toString(36).substring(2, 10).toUpperCase();
+                        await prisma.sellerPayoutAccount.update({
+                            where: { id: payoutAccount.id },
+                            data: { subaccountId }
+                        });
+                    }
+                } catch (err) {
+                    console.error("Failed on-the-fly subaccount registration:", err);
+                    if (isTestMode) {
+                        subaccountId = "RS_MOCK_SUB_" + Math.random().toString(36).substring(2, 10).toUpperCase();
+                    }
+                }
+            }
+
+            if (subaccountId) {
+                // Calculate their exact flat share
+                let flatSplitAmount = 0;
+                const normalizedSplit = payoutAccount.splitType === "percentage"
+                    ? normalizePercentageSplitValue(payoutAccount.splitValue)
+                    : payoutAccount.splitValue;
+
+                if (payoutAccount.splitType === "percentage") {
+                    flatSplitAmount = storeTotal * (normalizedSplit / 100);
+                } else {
+                    flatSplitAmount = Math.min(storeTotal, normalizedSplit);
+                }
+
+                // Format to 2 decimal places to comply with Flutterwave constraints
+                flatSplitAmount = Math.round(flatSplitAmount * 100) / 100;
+
+                if (flatSplitAmount > 0) {
+                    subaccounts.push({
+                        id: subaccountId,
+                        transaction_charge_type: "flat_subaccount",
+                        transaction_charge: flatSplitAmount
+                    });
+                }
+            }
+        }
+
+        // Build Flutterwave transaction payload
+        const flwPayload = {
+            tx_ref,
+            amount: grandTotal,
+            currency: "NGN",
+            redirect_url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/order/verify/${tx_ref}`,
+            customer: {
+                email: user.email,
+                name: user.name,
+            },
+            customizations: {
+                title: "Darté Store Checkout",
+                description: `Payment for Order(s) ${orderIds.join(", ")}`,
+                logo: `${process.env.NEXT_PUBLIC_BASE_URL}/logo.png`,
+            },
+        };
+
+        // Note: We create/ensure Flutterwave subaccounts for sellers (above),
+        // but do not split funds at checkout. The platform holds funds until
+        // buyer confirms delivery, then a transfer of the seller's share
+        // (default 99%) is initiated. This avoids double-paying sellers.
+
+        // Call Flutterwave to initialize transaction
+        const response = await fetch("https://api.flutterwave.com/v3/payments", {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${process.env.FLUTTERWAVE_SECRET_KEY}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(flwPayload),
+        });
+
+        const flwData = await response.json();
+
+        if (!response.ok || flwData.status !== "success") {
+            console.error("Flutterwave API Error:", flwData);
+            throw new Error(flwData.message || "Failed to initialize payment with Flutterwave");
+        }
+
+        return NextResponse.json({
+            checkoutUrl: flwData.data.link,
+            orders: createdOrders,
+        });
+
+    } catch (error) {
+        console.error("Error initiating Flutterwave payment:", error);
+        return NextResponse.json(
+            { error: error.message || "Failed to initialize payment" },
+            { status: 500 }
+        );
+    }
+}

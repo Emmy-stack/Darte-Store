@@ -1,0 +1,164 @@
+@import "tailwindcss";
+
+@layer components {
+    @keyframes marqueeScroll {
+        0% {
+            transform: translateX(0%);
+        }
+        100% {
+            transform: translateX(-50%);
+        }
+    }
+
+    @keyframes cartPing {
+        0% { transform: scale(1); }
+        40% { transform: scale(1.6); }
+        100% { transform: scale(1); }
+    }
+
+    .animate-cart-ping {
+        animation: cartPing 0.35s ease-out;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(8px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate-in {
+        animation: fadeIn 0.3s ease-out both;
+    }
+
+    .fade-in {
+        animation-name: fadeIn;
+    }
+}
+
+@layer base {
+    button {
+        cursor: pointer;
+    }
+}
+
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+/* Custom Dark Mode Variant for Tailwind CSS v4 */
+@custom-variant dark (&:is(.dark *));
+
+/* Global Dark Mode Styles */
+.dark {
+    color-scheme: dark;
+}
+
+.dark body {
+    background-color: #0f172a !important; /* slate-900 */
+    color: #f8fafc !important; /* slate-50 */
+}
+
+/* Base backgrounds */
+.dark nav,
+.dark footer,
+.dark .bg-white,
+.dark [class*="bg-white"] {
+    background-color: #1e293b !important; /* slate-800 */
+    color: #f1f5f9 !important;
+}
+
+/* Secondary/light backgrounds override */
+.dark .bg-slate-50,
+.dark [class*="bg-slate-50"] {
+    background-color: #0f172a !important; /* slate-900 */
+}
+
+.dark .bg-slate-100,
+.dark [class*="bg-slate-100"] {
+    background-color: #334155 !important; /* slate-700 */
+}
+
+/* Hover styles */
+.dark .hover\:bg-slate-50:hover,
+.dark .hover\:bg-slate-100:hover,
+.dark .hover\:bg-slate-200:hover {
+    background-color: #475569 !important; /* slate-600 */
+}
+
+/* Typography color adjustments */
+.dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6,
+.dark .text-slate-700,
+.dark .text-slate-800,
+.dark .text-slate-900,
+.dark .text-gray-700,
+.dark .text-gray-800,
+.dark .text-gray-900 {
+    color: #f8fafc !important; /* slate-50 */
+}
+
+.dark .text-slate-600,
+.dark .text-slate-500,
+.dark .text-gray-600,
+.dark .text-gray-500 {
+    color: #cbd5e1 !important; /* slate-300 */
+}
+
+.dark .text-slate-400,
+.dark .text-gray-400 {
+    color: #94a3b8 !important; /* slate-400 */
+}
+
+/* Borders */
+.dark .border,
+.dark .border-slate-100,
+.dark .border-slate-200,
+.dark .border-slate-300,
+.dark .border-slate-500\/30,
+.dark .border-gray-200,
+.dark .border-gray-300,
+.dark hr {
+    border-color: #334155 !important; /* slate-700 */
+}
+
+/* Inputs, Textareas, Selects */
+.dark input,
+.dark textarea,
+.dark select {
+    background-color: #1e293b !important;
+    color: #f8fafc !important;
+    border-color: #475569 !important;
+}
+.dark input::placeholder,
+.dark textarea::placeholder {
+    color: #64748b !important;
+}
+
+/* Glassmorphism elements */
+.dark .bg-white\/80 {
+    background-color: rgba(30, 41, 59, 0.8) !important;
+}
+
+/* Hero Carousel specific slides overrides to make them elegant dark variants */
+.dark .bg-green-200 {
+    background-color: #064e3b !important; /* emerald-900 */
+    color: #ecfdf5 !important;
+}
+.dark .bg-green-300 {
+    background-color: #065f46 !important; /* emerald-800 */
+    color: #a7f3d0 !important;
+}
+.dark .bg-orange-200 {
+    background-color: #7c2d12 !important; /* orange-950 */
+    color: #fff7ed !important;
+}
+.dark .bg-blue-200 {
+    background-color: #1e3a8a !important; /* blue-900 */
+    color: #eff6ff !important;
+}
+
+.dark .shadow-sm,
+.dark .shadow,
+.dark .shadow-md,
+.dark .shadow-lg,
+.dark .shadow-xl {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -4px rgba(0, 0, 0, 0.4) !important;
+}
