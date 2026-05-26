@@ -58,8 +58,10 @@ export async function POST(request) {
             return NextResponse.json({ error: "Seller store not found" }, { status: 404 });
         }
 
-        const { bankCode, bankName, accountNumber, splitType = "percentage", splitValue = 99 } = await request.json();
-        const normalizedSplitValue = splitType === "percentage" ? normalizePercentageSplitValue(splitValue) : splitValue;
+        const { bankCode, bankName, accountNumber } = await request.json();
+        const splitType = "percentage";
+        const splitValue = 99;
+        const normalizedSplitValue = 99;
 
         if (!bankCode || !bankName || !accountNumber) {
             return NextResponse.json({ error: "Bank code, bank name, and account number are required" }, { status: 400 });

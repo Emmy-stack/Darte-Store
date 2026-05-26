@@ -72,10 +72,9 @@ export async function POST(request) {
         const bankName = formData.get("bankName")
         const accountNumber = formData.get("accountNumber")
         
-        // Settlement preferences
-        const splitType = formData.get("splitType") || "percentage"
-        const splitValueInput = Number(formData.get("splitValue"))
-        const splitValue = Number.isFinite(splitValueInput) && splitValueInput > 0 ? splitValueInput : 99
+        // Settlement preferences (strictly enforced to 99% / 1% split)
+        const splitType = "percentage";
+        const splitValue = 99;
 
         if (!name || !description || !email || !contact || !address || !image || !bankCode || !bankName || !accountNumber) {
             return NextResponse.json({error: "missing store or bank payout info"}, {status: 400})
