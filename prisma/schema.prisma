@@ -236,7 +236,7 @@ model SellerTransfer {
     amount        Float
     currency      String   @default("NGN")
     status        String   @default("pending") // "pending", "successful", "failed"
-    transferId    Int?
+    transferId    String?
     reference     String   @unique // Idempotency reference (matches orderId)
     createdAt     DateTime @default(now())
     updatedAt     DateTime @updatedAt

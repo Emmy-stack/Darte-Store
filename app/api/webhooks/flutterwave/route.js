@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { triggerSellerPayout } from "@/lib/payout";
 
 export async function POST(request) {
     try {
@@ -76,18 +75,18 @@ export async function POST(request) {
                     // Payouts will be triggered manually after buyer confirmation
                 }
             }
-        } else if (event === "transfer.completed") {
+        } else if (event === "transfer.completed" || event === "transfer.disburse") {
             const transferId = data.id;
             const reference = data.reference;
 
-            console.log(`Flutterwave transfer completed webhook received for reference: ${reference}, status: ${data.status}`);
+            console.log(`Flutterwave transfer webhook received for reference: ${reference}, event: ${event}, status: ${data.status}`);
 
             if (!reference) {
-                console.warn("Webhook warning: Missing reference in transfer.completed event");
+                console.warn("Webhook warning: Missing reference in transfer event");
                 return NextResponse.json({ received: true });
             }
 
-            // Query Flutterwave transfer endpoint to confirm (Double-verification check)
+            // Query Flutterwave transfer endpoint to confirm (double-verification check)
             const verifyRes = await fetch(`https://api.flutterwave.com/v3/transfers/${transferId}`, {
                 method: "GET",
                 headers: {
@@ -117,7 +116,7 @@ export async function POST(request) {
                     where: { reference },
                     data: {
                         status: dbStatus,
-                        transferId: Number(transferId)
+                        transferId: transferId
                     }
                 });
                 console.log(`Seller payout transfer for reference ${reference} updated to ${dbStatus} via verified webhook.`);
