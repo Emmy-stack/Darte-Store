@@ -1,5 +1,5 @@
 'use client'
-import { PackageIcon, Search, ShoppingCart, Menu, X, LogOut, Store, Mail, MessageSquare } from "lucide-react";
+import { PackageIcon, Search, ShoppingCart, Menu, X, LogOut, Store, Mail, MessageSquare, User } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useCallback } from "react";
@@ -8,7 +8,7 @@ import { useUser, useClerk } from "@clerk/nextjs";
 
 const Navbar = () => {
   const { user } = useUser();
-  const { openSignIn, signOut } = useClerk();
+  const { openSignIn, signOut, openUserProfile } = useClerk();
   const router = useRouter();
 
   const [search, setSearch] = useState('');
@@ -356,6 +356,16 @@ const Navbar = () => {
                       <PackageIcon size={16} className="text-slate-500" />
                       My Orders
                     </button>
+                    <button
+                      onClick={() => {
+                        setMenuOpen(false);
+                        openUserProfile();
+                      }}
+                      className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                    >
+                      <User size={16} className="text-slate-500" />
+                      Manage Account
+                    </button>
 
                     <div className="border-t border-slate-100 mt-1 pt-1">
                       <button onClick={() => { setMenuOpen(false); signOut(); }} className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors">
@@ -430,6 +440,16 @@ const Navbar = () => {
                     <button onClick={() => handleMenuNav('/orders')} className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
                       <PackageIcon size={16} className="text-slate-500" />
                       My Orders
+                    </button>
+                    <button
+                      onClick={() => {
+                        setMenuOpen(false);
+                        openUserProfile();
+                      }}
+                      className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                    >
+                      <User size={16} className="text-slate-500" />
+                      Manage Account
                     </button>
 
                     <div className="border-t border-slate-100 mt-1 pt-1">
