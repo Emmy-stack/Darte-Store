@@ -1,85 +1,202 @@
-<div align="center">
-  <h1><img src="https://darte-gs.vercel.app/favicon.ico" width="20" height="20" alt="darte Favicon">
-   darte</h1>
-  <p>
-    An open-source multi-vendor e-commerce platform built with Next.js and Tailwind CSS.
-  </p>
-  <p>
-    <a href="https://github.com/GreatStackDev/darte/blob/main/LICENSE.md"><img src="https://img.shields.io/github/license/GreatStackDev/darte?style=for-the-badge" alt="License"></a>
-    <a href="https://github.com/GreatStackDev/darte/pulls"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=for-the-badge" alt="PRs Welcome"></a>
-    <a href="https://github.com/GreatStackDev/darte/issues"><img src="https://img.shields.io/github/issues/GreatStackDev/darte?style=for-the-badge" alt="GitHub issues"></a>
-  </p>
-</div>
+# 🛍️ Darté
+
+**Darté** is a modern multi-vendor e-commerce marketplace designed to help individuals and businesses buy and sell products seamlessly. Built with Next.js, Tailwind CSS, and a scalable backend architecture, Darté empowers sellers to create stores, manage products, receive orders, and grow their businesses while providing customers with a beautiful shopping experience.
 
 ---
 
-## 📖 Table of Contents
+## ✨ Features
 
-- [✨ Features](#-features)
-- [🛠️ Tech Stack](#-tech-stack)
-- [🚀 Getting Started](#-getting-started)
-- [🤝 Contributing](#-contributing)
-- [📜 License](#-license)
+### 🛒 Customer Features
+
+* Browse products across multiple categories
+* Search and filter products
+* Product reviews and ratings
+* Wishlist/Favorites
+* Shopping cart functionality
+* Secure checkout experience
+* Order tracking
+* User profiles and order history
+* Recommended products based on ratings and popularity
+
+### 🏪 Seller Features
+
+* Seller registration and onboarding
+* Admin approval system for sellers
+* Product management dashboard
+* Upload and manage products
+* Order management
+* Sales analytics
+* Seller notifications for new orders and payments
+* Linked payout accounts
+* Subscription-based seller accounts
+
+### 👨‍💼 Admin Features
+
+* Vendor approval and management
+* Product moderation
+* User management
+* Platform analytics
+* Commission management
+* Subscription monitoring
+* Revenue tracking
+* Marketplace oversight
+
+### 💳 Marketplace Features
+
+* Real payment integration
+* Automated revenue split:
+
+  * 90% to Seller
+  * 10% to Platform
+* Secure transactions
+* Scalable multi-vendor architecture
+* Cloud-based image storage
 
 ---
 
-## Features
+## 🛠️ Tech Stack
 
-- **Multi-Vendor Architecture:** Allows multiple vendors to register, manage their own products, and sell on a single platform.
-- **Customer-Facing Storefront:** A beautiful and responsive user interface for customers to browse and purchase products.
-- **Vendor Dashboards:** Dedicated dashboards for vendors to manage products, view sales analytics, and track orders.
-- **Admin Panel:** A comprehensive dashboard for platform administrators to oversee vendors, products, and commissions.
+### Frontend
 
-## 🛠️ Tech Stack <a name="-tech-stack"></a>
+* Next.js
+* React
+* Tailwind CSS
+* Redux Toolkit
+* Lucide React
 
-- **Framework:** Next.js
-- **Styling:** Tailwind CSS
-- **UI Components:** Lucide React for icons
-- **State Management:** Redux Toolkit
+### Backend
 
-## 🚀 Getting Started <a name="-getting-started"></a>
+* Node.js
+* Express.js
+* MongoDB
+* JWT Authentication
 
-First, install the dependencies. We recommend using `npm` for this project.
+### Storage & Services
+
+* Cloudinary (Image Storage)
+* Payment Gateway Integration (Paystack / Flutterwave)
+* Email Notifications
+
+---
+
+## 📂 Product Categories
+
+* All Products
+* Men
+* Women
+* Gadgets
+* Clothing
+* Jewelry
+* Gifts
+
+---
+
+## 🚀 Getting Started
+
+### Clone the Repository
+
+```bash
+git clone https://github.com/yourusername/darte.git
+cd darte
+```
+
+### Install Dependencies
 
 ```bash
 npm install
 ```
 
-Then, run the development server:
+### Configure Environment Variables
+
+Create a `.env.local` file:
+
+```env
+MONGODB_URI=
+JWT_SECRET=
+PAYSTACK_SECRET_KEY=
+CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
+```
+
+### Run Development Server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open:
 
-You can start editing the page by modifying `app/(public)/page.js`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Outfit](https://vercel.com/font), a new font family for Vercel.
-
----
-
-## 🤝 Contributing <a name="-contributing"></a>
-
-We welcome contributions! Please see our [CONTRIBUTING.md](./CONTRIBUTING.md) for more details on how to get started.
+```text
+http://localhost:3000
+```
 
 ---
 
-## 📜 License <a name="-license"></a>
+## 📈 Business Model
 
-This project is licensed under the MIT License. See the [LICENSE.md](./LICENSE.md) file for details.
+Darté operates as a marketplace platform where independent sellers can list and sell products.
 
-## Learn More
+### Seller Subscription
 
-To learn more about Next.js, take a look at the following resources:
+* Sellers must be approved by an administrator.
+* Sellers pay a monthly subscription fee to maintain active seller status.
+* Inactive subscriptions may result in seller account suspension.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Revenue Split
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+For every successful order:
+
+```text
+Seller → 90%
+Darté Platform → 10%
+```
+
+This ensures sellers maximize earnings while supporting platform growth and maintenance.
+
+---
+
+## 🎯 Vision
+
+Our mission is to empower entrepreneurs and small businesses by providing a reliable, beautiful, and scalable marketplace where anyone can sell products, reach customers, and grow their brand.
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome.
+
+1. Fork the repository
+2. Create a feature branch
+
+```bash
+git checkout -b feature/amazing-feature
+```
+
+3. Commit your changes
+
+```bash
+git commit -m "Add amazing feature"
+```
+
+4. Push to your branch
+
+```bash
+git push origin feature/amazing-feature
+```
+
+5. Open a Pull Request
+
+---
+
+## 📜 License
+
+This project is licensed under the MIT License.
+
+---
+
+## 🌐 Darté
+
+**Shop. Sell. Grow.**
+
+A marketplace built for modern commerce.
