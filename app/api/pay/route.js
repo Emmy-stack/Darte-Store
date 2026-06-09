@@ -151,7 +151,8 @@ export async function POST(request) {
             },
         });
 
-        const isMockMode = !process.env.PAYSTACK_SECRET_KEY || process.env.PAYSTACK_SECRET_KEY === "mock" || process.env.PAYSTACK_SECRET_KEY.startsWith("mock");
+        const isLocal = process.env.NODE_ENV === "development" || process.env.NEXT_PUBLIC_BASE_URL?.includes("localhost");
+        const isMockMode = isLocal && (!process.env.PAYSTACK_SECRET_KEY || process.env.PAYSTACK_SECRET_KEY === "mock" || process.env.PAYSTACK_SECRET_KEY.startsWith("mock"));
 
         if (isMockMode) {
             console.log("Mock Mode: Simulating Paystack payment initialization.");

@@ -16,9 +16,10 @@ export async function GET(request, context) {
 
         const actualRef = reference || tx_ref;
 
-        const isMockMode = !process.env.PAYSTACK_SECRET_KEY || 
+        const isLocal = process.env.NODE_ENV === "development" || process.env.NEXT_PUBLIC_BASE_URL?.includes("localhost");
+        const isMockMode = isLocal && (!process.env.PAYSTACK_SECRET_KEY || 
             process.env.PAYSTACK_SECRET_KEY === "mock" || 
-            process.env.PAYSTACK_SECRET_KEY.startsWith("mock");
+            process.env.PAYSTACK_SECRET_KEY.startsWith("mock"));
 
         let transaction_id = reference || "MOCK_TX_" + Math.random().toString(36).substring(2, 10).toUpperCase();
 

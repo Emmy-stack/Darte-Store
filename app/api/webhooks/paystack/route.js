@@ -5,9 +5,10 @@ import crypto from "crypto";
 export async function POST(request) {
     try {
         const signature = request.headers.get("x-paystack-signature");
-        const isMockMode = !process.env.PAYSTACK_SECRET_KEY || 
+        const isLocal = process.env.NODE_ENV === "development" || process.env.NEXT_PUBLIC_BASE_URL?.includes("localhost");
+        const isMockMode = isLocal && (!process.env.PAYSTACK_SECRET_KEY || 
             process.env.PAYSTACK_SECRET_KEY === "mock" || 
-            process.env.PAYSTACK_SECRET_KEY.startsWith("mock");
+            process.env.PAYSTACK_SECRET_KEY.startsWith("mock"));
 
         let bodyText = "";
         let body = {};

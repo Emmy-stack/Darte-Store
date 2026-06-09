@@ -40,7 +40,8 @@ export async function POST(request) {
             if (payoutAccount && !payoutAccount.subaccountId && payoutAccount.bankCode && payoutAccount.accountNumber) {
                 console.log(`On-the-fly recipient registration on approval for Store ${storeId}`);
                 try {
-                    const isMockMode = !process.env.PAYSTACK_SECRET_KEY || process.env.PAYSTACK_SECRET_KEY === "mock" || process.env.PAYSTACK_SECRET_KEY.startsWith("mock");
+                    const isLocal = process.env.NODE_ENV === "development" || process.env.NEXT_PUBLIC_BASE_URL?.includes("localhost");
+                    const isMockMode = isLocal && (!process.env.PAYSTACK_SECRET_KEY || process.env.PAYSTACK_SECRET_KEY === "mock" || process.env.PAYSTACK_SECRET_KEY.startsWith("mock"));
                     let subaccountId = null;
 
                     if (!isMockMode) {
