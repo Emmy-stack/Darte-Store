@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react'
 import { LayoutTemplate, Upload, LinkIcon, RotateCcw, Save, Loader2, CheckCircle, Info } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Image from 'next/image'
-import { assets } from '@/assets/assets'
 
 // Default slide configuration details for visual matching
 const defaultSlides = [
@@ -12,21 +11,18 @@ const defaultSlides = [
     index: 0,
     title: "Gadgets you'll love. Prices you'll trust.",
     bgColor: "bg-green-100 border-green-200",
-    defaultImage: assets.hero_model_img,
     imgClassName: "absolute bottom-0 right-2 w-20 object-contain h-24"
   },
   {
     index: 1,
     title: "Best products",
     bgColor: "bg-orange-100 border-orange-200",
-    defaultImage: assets.hero_product_img1,
     imgClassName: "w-16 h-16 object-contain"
   },
   {
     index: 2,
     title: "20% discounts",
     bgColor: "bg-blue-100 border-blue-200",
-    defaultImage: assets.hero_product_img2,
     imgClassName: "w-16 h-16 object-contain"
   }
 ]

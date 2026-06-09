@@ -1,5 +1,4 @@
 'use client'
-import { assets } from '@/assets/assets'
 import { ArrowRightIcon, ChevronRightIcon } from 'lucide-react'
 import Image from 'next/image'
 import React, { useState, useEffect } from 'react'
@@ -78,15 +77,15 @@ const Hero = () => {
             href={slides[0].link} 
             className={`relative w-full h-[250px] sm:h-[300px] md:h-[350px] lg:h-[400px] xl:h-[450px] overflow-hidden ${!slides[0].imageUrl ? 'bg-green-200 flex items-center justify-center' : ''}`}
           >
-            <Image
-              className={slides[0].imageUrl ? "w-full h-full object-cover" : "max-h-[90%] w-auto object-contain"}
-              src={slides[0].imageUrl || assets.hero_model_img}
-              alt="Hero Slide 1"
-              priority
-              fill={!!slides[0].imageUrl}
-              width={slides[0].imageUrl ? undefined : 350}
-              height={slides[0].imageUrl ? undefined : 450}
-            />
+            {slides[0].imageUrl && (
+              <Image
+                className="w-full h-full object-cover"
+                src={slides[0].imageUrl}
+                alt="Hero Slide 1"
+                priority
+                fill
+              />
+            )}
           </SlideContainer>
         </SwiperSlide>
 
@@ -96,14 +95,14 @@ const Hero = () => {
             href={slides[1].link} 
             className={`relative w-full h-[250px] sm:h-[300px] md:h-[350px] lg:h-[400px] xl:h-[450px] overflow-hidden ${!slides[1].imageUrl ? 'bg-orange-200 flex items-center justify-center' : ''}`}
           >
-            <Image
-              className={slides[1].imageUrl ? "w-full h-full object-cover" : "max-h-[80%] w-auto object-contain"}
-              src={slides[1].imageUrl || assets.hero_product_img1}
-              alt="Hero Slide 2"
-              fill={!!slides[1].imageUrl}
-              width={slides[1].imageUrl ? undefined : 150}
-              height={slides[1].imageUrl ? undefined : 150}
-            />
+            {slides[1].imageUrl && (
+              <Image
+                className="w-full h-full object-cover"
+                src={slides[1].imageUrl}
+                alt="Hero Slide 2"
+                fill
+              />
+            )}
           </SlideContainer>
         </SwiperSlide>
 
@@ -113,14 +112,14 @@ const Hero = () => {
             href={slides[2].link} 
             className={`relative w-full h-[250px] sm:h-[300px] md:h-[350px] lg:h-[400px] xl:h-[450px] overflow-hidden ${!slides[2].imageUrl ? 'bg-blue-200 flex items-center justify-center' : ''}`}
           >
-            <Image
-              className={slides[2].imageUrl ? "w-full h-full object-cover" : "max-h-[80%] w-auto object-contain"}
-              src={slides[2].imageUrl || assets.hero_product_img2}
-              alt="Hero Slide 3"
-              fill={!!slides[2].imageUrl}
-              width={slides[2].imageUrl ? undefined : 150}
-              height={slides[2].imageUrl ? undefined : 150}
-            />
+            {slides[2].imageUrl && (
+              <Image
+                className="w-full h-full object-cover"
+                src={slides[2].imageUrl}
+                alt="Hero Slide 3"
+                fill
+              />
+            )}
           </SlideContainer>
         </SwiperSlide>
       </Swiper>
