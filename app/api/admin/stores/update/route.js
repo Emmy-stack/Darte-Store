@@ -38,51 +38,46 @@ export async function POST(request) {
                 where: { storeId }
             });
             if (payoutAccount && !payoutAccount.subaccountId && payoutAccount.bankCode && payoutAccount.accountNumber) {
-                console.log(`On-the-fly subaccount registration on approval for Store ${storeId}`);
+                console.log(`On-the-fly recipient registration on approval for Store ${storeId}`);
                 try {
-                    const isTestMode = process.env.FLUTTERWAVE_SECRET_KEY && process.env.FLUTTERWAVE_SECRET_KEY.startsWith("FLWSECK_TEST-");
-                    const { getFlutterwaveSplitValue, normalizePercentageSplitValue } = await import("@/lib/splitUtils");
-                    const normalizedSplit = payoutAccount.splitType === "percentage" ? normalizePercentageSplitValue(payoutAccount.splitValue) : payoutAccount.splitValue;
-                    const flwSplitValue = getFlutterwaveSplitValue(payoutAccount.splitType, normalizedSplit);
-                    
-                    const subRes = await fetch("https://api.flutterwave.com/v3/subaccounts", {
-                        method: "POST",
-                        headers: {
-                            Authorization: `Bearer ${process.env.FLUTTERWAVE_SECRET_KEY}`,
-                            "Content-Type": "application/json",
-                        },
-                        body: JSON.stringify({
-                            account_bank: payoutAccount.bankCode,
-                            account_number: payoutAccount.accountNumber,
-                            business_name: updatedStore.name,
-                            business_email: updatedStore.email,
-                            business_contact: updatedStore.name,
-                            business_mobile: updatedStore.contact,
-                            country: "NG",
-                            currency: "NGN",
-                            split_type: payoutAccount.splitType,
-                            split_value: flwSplitValue,
-                        }),
-                    });
+                    const isTestMode = !process.env.PAYSTACK_SECRET_KEY || process.env.PAYSTACK_SECRET_KEY.includes("mock") || process.env.PAYSTACK_SECRET_KEY.includes("test");
+                    let subaccountId = null;
 
-                    const subData = await subRes.json();
-                    if (subRes.ok && subData.status === "success") {
-                        const subaccountId = subData.data.subaccount_id || subData.data.id;
+                    if (!isTestMode) {
+                        const subRes = await fetch("https://api.paystack.co/transferrecipient", {
+                            method: "POST",
+                            headers: {
+                                Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+                                "Content-Type": "application/json",
+                            },
+                            body: JSON.stringify({
+                                type: "nuban",
+                                name: payoutAccount.accountName || updatedStore.name,
+                                account_number: payoutAccount.accountNumber,
+                                bank_code: payoutAccount.bankCode,
+                                currency: "NGN",
+                            }),
+                        });
+
+                        const subData = await subRes.json();
+                        if (subRes.ok && subData.status) {
+                            subaccountId = subData.data.recipient_code;
+                            await prisma.sellerPayoutAccount.update({
+                                where: { id: payoutAccount.id },
+                                data: { subaccountId }
+                            });
+                            console.log(`Registered recipient ${subaccountId} for approved store ${storeId}`);
+                        }
+                    } else {
+                        subaccountId = "RCP_" + Math.random().toString(36).substring(2, 12).toUpperCase();
                         await prisma.sellerPayoutAccount.update({
                             where: { id: payoutAccount.id },
                             data: { subaccountId }
                         });
-                        console.log(`Registered subaccount ${subaccountId} for approved store ${storeId}`);
-                    } else if (isTestMode) {
-                        const subaccountId = "RS_MOCK_SUB_" + Math.random().toString(36).substring(2, 10).toUpperCase();
-                        await prisma.sellerPayoutAccount.update({
-                            where: { id: payoutAccount.id },
-                            data: { subaccountId }
-                        });
-                        console.log(`Registered mock subaccount ${subaccountId} for approved store ${storeId}`);
+                        console.log(`Registered mock recipient ${subaccountId} for approved store ${storeId}`);
                     }
                 } catch (err) {
-                    console.error("Failed to register subaccount on approval:", err);
+                    console.error("Failed to register recipient on approval:", err);
                 }
             }
         }

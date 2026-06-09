@@ -19,13 +19,13 @@ const OrderItem = ({ order }) => {
     const handleConfirmDelivery = async () => {
         try {
             setActionLoading(true);
-            const res = await fetch(`/api/orders/${order.id}`, {
-                method: 'PATCH',
+            const res = await fetch(`/api/orders/confirm`, {
+                method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'confirm' })
+                body: JSON.stringify({ orderId: order.id })
             });
             if (res.ok) {
-                toast.success("Delivery confirmed! Payment released to seller.");
+                toast.success("Order confirmed! Payout has been released.");
                 setTimeout(() => {
                     window.location.reload();
                 }, 1500);
@@ -91,7 +91,7 @@ const OrderItem = ({ order }) => {
                                     <div>
                                         {ratings.find(rating => order.id === rating.orderId && item.product.id === rating.productId)
                                             ? <Rating value={ratings.find(rating => order.id === rating.orderId && item.product.id === rating.productId).rating} />
-                                            : <button onClick={() => setRatingModal({ orderId: order.id, productId: item.product.id })} className={`text-green-500 hover:bg-green-50 transition ${order.status !== "DELIVERED" && 'hidden'}`}>Rate Product</button>
+                                            : <button onClick={() => setRatingModal({ orderId: order.id, productId: item.product.id })} className={`text-green-500 hover:bg-green-50 transition ${order.status !== "completed" && 'hidden'}`}>Rate Product</button>
                                         }</div>
                                     {ratingModal && <RatingModal ratingModal={ratingModal} setRatingModal={setRatingModal} />}
                                 </div>
@@ -111,11 +111,11 @@ const OrderItem = ({ order }) => {
                 <td className="text-left space-y-2 text-sm max-md:hidden">
                     <div
                         className={`flex items-center justify-center gap-1 rounded-full p-1.5 font-medium ${
-                            order.status === 'DELIVERY_CONFIRMED'
+                            order.status === 'completed' || order.status === 'DELIVERY_CONFIRMED'
                                 ? 'text-green-700 bg-green-50'
                                 : order.status === 'DELIVERY_DENIED'
                                     ? 'text-red-700 bg-red-50'
-                                    : order.status === 'DELIVERED'
+                                    : order.status === 'paid_pending_confirmation' || order.status === 'DELIVERED'
                                         ? 'text-amber-700 bg-amber-50'
                                         : 'text-slate-500 bg-slate-50'
                         }`}
@@ -123,21 +123,14 @@ const OrderItem = ({ order }) => {
                         <DotIcon size={10} className="scale-250" />
                         {order.status.split('_').join(' ').toLowerCase()}
                     </div>
-                    {order.status === 'DELIVERED' && (
+                    {order.status === 'paid_pending_confirmation' && (
                         <div className="flex flex-col gap-2 mt-2">
                             <button
                                 onClick={handleConfirmDelivery}
                                 disabled={actionLoading}
                                 className="w-full text-center py-1 bg-green-600 hover:bg-green-700 text-white rounded text-[11px] font-medium transition cursor-pointer disabled:opacity-50"
                             >
-                                Confirm Receipt
-                            </button>
-                            <button
-                                onClick={handleDenyDelivery}
-                                disabled={actionLoading}
-                                className="w-full text-center py-1 bg-red-600 hover:bg-red-700 text-white rounded text-[11px] font-medium transition cursor-pointer disabled:opacity-50"
-                            >
-                                Deny Receipt
+                                Confirm Order Received
                             </button>
                         </div>
                     )}
@@ -151,31 +144,24 @@ const OrderItem = ({ order }) => {
                     <p>{order.address.phone}</p>
                     <div className="flex flex-col gap-2 mt-3 items-center">
                         <span className={`px-4 py-1 rounded-full text-xs font-semibold ${
-                            order.status === 'DELIVERY_CONFIRMED'
+                            order.status === 'completed' || order.status === 'DELIVERY_CONFIRMED'
                                 ? 'text-green-700 bg-green-50'
                                 : order.status === 'DELIVERY_DENIED'
                                     ? 'text-red-700 bg-red-50'
-                                    : order.status === 'DELIVERED'
+                                    : order.status === 'paid_pending_confirmation' || order.status === 'DELIVERED'
                                         ? 'text-amber-700 bg-amber-50'
                                         : 'text-slate-600 bg-slate-50'
                         }`}>
                             {order.status.replace(/_/g, ' ').toLowerCase()}
                         </span>
-                        {order.status === 'DELIVERED' && (
+                        {order.status === 'paid_pending_confirmation' && (
                             <div className="flex gap-4 mt-2 w-full justify-center">
                                 <button
                                     onClick={handleConfirmDelivery}
                                     disabled={actionLoading}
                                     className="px-4 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded text-xs font-semibold transition disabled:opacity-50"
                                 >
-                                    Confirm Delivery
-                                </button>
-                                <button
-                                    onClick={handleDenyDelivery}
-                                    disabled={actionLoading}
-                                    className="px-4 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-semibold transition disabled:opacity-50"
-                                >
-                                    Deny Delivery
+                                    Confirm Order Received
                                 </button>
                             </div>
                         )}

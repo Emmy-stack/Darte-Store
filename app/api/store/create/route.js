@@ -1,6 +1,5 @@
 import { uploadToImageKit, buildImageUrl } from "@/configs/imagekit";
 import prisma from "@/lib/prisma";
-import { getFlutterwaveSplitValue, normalizePercentageSplitValue } from "@/lib/splitUtils";
 import { getAuth, currentUser } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
@@ -98,86 +97,62 @@ export async function POST(request) {
             return NextResponse.json({error: "Username already taken"}, {status: 400})
         }
 
-        const isTestMode = process.env.FLUTTERWAVE_SECRET_KEY && process.env.FLUTTERWAVE_SECRET_KEY.startsWith("FLWSECK_TEST-");
+        const isTestMode = !process.env.PAYSTACK_SECRET_KEY || process.env.PAYSTACK_SECRET_KEY.includes("mock") || process.env.PAYSTACK_SECRET_KEY.includes("test");
 
-        // Call Flutterwave to verify the account details on the server-side
-        const flwResponse = await fetch("https://api.flutterwave.com/v3/accounts/resolve", {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${process.env.FLUTTERWAVE_SECRET_KEY}`,
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                account_number: accountNumber,
-                account_bank: bankCode,
-            }),
-        });
-
-        const flwData = await flwResponse.json();
-
-        let accountName;
-
-        if (!flwResponse.ok || flwData.status !== "success") {
-            console.error("Flutterwave onboarding verify-bank failed:", flwData);
-            
-            // In test mode, fallback to a mock name to allow testing other banks
-            if (isTestMode) {
-                console.log("Test mode: Creating store with mock account name");
-                accountName = "TEST ACCOUNT (SANDBOX)";
-            } else {
-                return NextResponse.json({ error: flwData.message || "Failed to verify bank details with Flutterwave" }, { status: 400 });
-            }
-        } else {
-            accountName = flwData.data.account_name;
-        }
-
-        // Register Seller as a Collection Subaccount in Flutterwave
-        // Flutterwave split_value expects a decimal for percentage (e.g. 0.90 for 90%)
-        const normalizedSplitValue = splitType === "percentage" ? normalizePercentageSplitValue(splitValue) : splitValue;
-        const flwSplitValue = getFlutterwaveSplitValue(splitType, normalizedSplitValue);
-        
+        let accountName = "TEST ACCOUNT (SANDBOX)";
         let subaccountId = null;
-        try {
-            const subaccountResponse = await fetch("https://api.flutterwave.com/v3/subaccounts", {
-                method: "POST",
+
+        if (!isTestMode) {
+            // Call Paystack to verify the account details on the server-side
+            const resolveResponse = await fetch(`https://api.paystack.co/bank/resolve?account_number=${accountNumber}&bank_code=${bankCode}`, {
+                method: "GET",
                 headers: {
-                    Authorization: `Bearer ${process.env.FLUTTERWAVE_SECRET_KEY}`,
+                    Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify({
-                    account_bank: bankCode,
-                    account_number: accountNumber,
-                    business_name: name,
-                    business_email: email,
-                    business_contact: name,
-                    business_mobile: contact,
-                    country: "NG",
-                    currency: "NGN",
-                    split_type: splitType,
-                    split_value: flwSplitValue,
-                }),
             });
 
-            const subaccountData = await subaccountResponse.json();
+            const resolveData = await resolveResponse.json();
 
-            if (!subaccountResponse.ok || subaccountData.status !== "success") {
-                console.error("Flutterwave onboarding subaccount creation failed:", subaccountData);
-                if (isTestMode) {
-                    console.log("Test mode: Generating mock subaccount ID");
-                    subaccountId = "RS_MOCK_SUB_" + Math.random().toString(36).substring(2, 10).toUpperCase();
-                } else {
-                    return NextResponse.json({ error: subaccountData.message || "Failed to register subaccount with Flutterwave" }, { status: 400 });
+            if (!resolveResponse.ok || !resolveData.status) {
+                console.error("Paystack onboarding verify-bank failed:", resolveData);
+                return NextResponse.json({ error: resolveData.message || "Failed to verify bank details with Paystack" }, { status: 400 });
+            }
+
+            accountName = resolveData.data.account_name;
+
+            // Create Paystack transfer recipient
+            try {
+                const recipientResponse = await fetch("https://api.paystack.co/transferrecipient", {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        type: "nuban",
+                        name: accountName,
+                        account_number: accountNumber,
+                        bank_code: bankCode,
+                        currency: "NGN",
+                    }),
+                });
+
+                const recipientData = await recipientResponse.json();
+
+                if (!recipientResponse.ok || !recipientData.status) {
+                    console.error("Paystack onboarding recipient creation failed:", recipientData);
+                    return NextResponse.json({ error: recipientData.message || "Failed to register recipient with Paystack" }, { status: 400 });
                 }
-            } else {
-                subaccountId = subaccountData.data.subaccount_id || subaccountData.data.id;
+
+                subaccountId = recipientData.data.recipient_code;
+            } catch (subError) {
+                console.error("Error calling Paystack Recipient API:", subError);
+                return NextResponse.json({ error: subError.message || "Error registering recipient with Paystack" }, { status: 500 });
             }
-        } catch (subError) {
-            console.error("Error calling Flutterwave Subaccounts API:", subError);
-            if (isTestMode) {
-                subaccountId = "RS_MOCK_SUB_" + Math.random().toString(36).substring(2, 10).toUpperCase();
-            } else {
-                return NextResponse.json({ error: subError.message || "Error registering subaccount with Flutterwave" }, { status: 500 });
-            }
+        } else {
+            console.log("Mock Mode: Simulating resolved account name and Paystack recipient code.");
+            subaccountId = "RCP_" + Math.random().toString(36).substring(2, 12).toUpperCase();
         }
 
         // Image upload to ImageKit

@@ -51,6 +51,8 @@ enum OrderStatus {
     DELIVERED
     DELIVERY_CONFIRMED
     DELIVERY_DENIED
+    paid_pending_confirmation
+    completed
 }
 
 
@@ -58,6 +60,7 @@ enum PaymentMethod {
     COD
     STRIPE
     FLUTTERWAVE
+    PAYSTACK
 }
 
 // Required for creating an Order: total, userId, storeId, addressId, isPaid, paymentMethod, isCouponUsed, coupon (JSON), orderItems (nested)

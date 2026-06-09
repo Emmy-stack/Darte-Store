@@ -15,30 +15,25 @@ export async function POST(request) {
             return NextResponse.json({ error: "Bank code and account number are required" }, { status: 400 });
         }
 
-        const isTestMode = process.env.FLUTTERWAVE_SECRET_KEY && process.env.FLUTTERWAVE_SECRET_KEY.startsWith("FLWSECK_TEST-");
+        const isTestMode = !process.env.PAYSTACK_SECRET_KEY || process.env.PAYSTACK_SECRET_KEY.includes("mock") || process.env.PAYSTACK_SECRET_KEY.includes("test");
 
-        const response = await fetch("https://api.flutterwave.com/v3/accounts/resolve", {
-            method: "POST",
+        if (isTestMode) {
+            console.log("Test mode: Returning mock account resolution");
+            return NextResponse.json({ accountName: "TEST ACCOUNT (SANDBOX)" });
+        }
+
+        const response = await fetch(`https://api.paystack.co/bank/resolve?account_number=${accountNumber}&bank_code=${bankCode}`, {
+            method: "GET",
             headers: {
-                Authorization: `Bearer ${process.env.FLUTTERWAVE_SECRET_KEY}`,
+                Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify({
-                account_number: accountNumber,
-                account_bank: bankCode,
-            }),
         });
 
         const data = await response.json();
 
-        if (!response.ok || data.status !== "success") {
-            console.error("Flutterwave verify bank error:", data);
-            
-            if (isTestMode) {
-                console.log("Test mode: Returning mock account resolution");
-                return NextResponse.json({ accountName: "TEST ACCOUNT (SANDBOX)" });
-            }
-
+        if (!response.ok || !data.status) {
+            console.error("Paystack verify bank error:", data);
             return NextResponse.json({ error: data.message || "Could not resolve bank account details. Please check the account number and bank selected." }, { status: 400 });
         }
 

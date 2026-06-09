@@ -56,7 +56,7 @@ const OrderSummary = ({ totalPrice, items }) => {
         }
 
         try {
-            if (paymentMethod === 'FLUTTERWAVE') {
+            if (paymentMethod === 'PAYSTACK') {
                 const res = await fetch('/api/pay', {
                     method: 'POST',
                     headers: {
@@ -77,7 +77,7 @@ const OrderSummary = ({ totalPrice, items }) => {
                 // Clear Redux Cart
                 dispatch(clearCart());
 
-                // Redirect to Flutterwave checkout link
+                // Redirect to Paystack checkout link
                 window.location.href = data.checkoutUrl;
                 return data;
             }
@@ -121,8 +121,8 @@ const OrderSummary = ({ totalPrice, items }) => {
                 <label htmlFor="COD" className='cursor-pointer'>COD (Cash On Delivery)</label>
             </div>
             <div className='flex gap-2 items-center mt-1'>
-                <input type="radio" id="FLUTTERWAVE" name='payment' onChange={() => setPaymentMethod('FLUTTERWAVE')} checked={paymentMethod === 'FLUTTERWAVE'} className='accent-gray-500' />
-                <label htmlFor="FLUTTERWAVE" className='cursor-pointer'>Flutterwave (Pay with Card)</label>
+                <input type="radio" id="PAYSTACK" name='payment' onChange={() => setPaymentMethod('PAYSTACK')} checked={paymentMethod === 'PAYSTACK'} className='accent-gray-500' />
+                <label htmlFor="PAYSTACK" className='cursor-pointer'>Paystack (Pay with Card)</label>
             </div>
             <div className='my-4 py-4 border-y border-slate-200 text-slate-400'>
                 <p>Address</p>

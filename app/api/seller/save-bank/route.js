@@ -1,45 +1,6 @@
 import { getAuth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { getFlutterwaveSplitValue, normalizePercentageSplitValue } from "@/lib/splitUtils";
-
-async function getNumericIdFromSubaccountId(subaccountId, apiKey) {
-    let page = 1;
-    let hasMore = true;
-    while (hasMore) {
-        try {
-            const res = await fetch(`https://api.flutterwave.com/v3/subaccounts?page=${page}`, {
-                method: "GET",
-                headers: {
-                    Authorization: `Bearer ${apiKey}`,
-                }
-            });
-            const data = await res.json();
-            if (!res.ok || data.status !== "success") {
-                break;
-            }
-            const list = data.data || [];
-            if (list.length === 0) {
-                hasMore = false;
-            } else {
-                const found = list.find(sub => sub.subaccount_id === subaccountId);
-                if (found) {
-                    return found.id;
-                }
-                const pageInfo = data.meta?.page_info;
-                if (pageInfo && pageInfo.current_page >= pageInfo.total_pages) {
-                    hasMore = false;
-                } else {
-                    page++;
-                }
-            }
-        } catch (err) {
-            console.error("Error in getNumericIdFromSubaccountId:", err);
-            break;
-        }
-    }
-    return null;
-}
 
 export async function POST(request) {
     try {
@@ -60,119 +21,63 @@ export async function POST(request) {
 
         const { bankCode, bankName, accountNumber } = await request.json();
         const splitType = "percentage";
-        const splitValue = 98;
-        const normalizedSplitValue = 98;
+        const splitValue = 98.0;
 
         if (!bankCode || !bankName || !accountNumber) {
             return NextResponse.json({ error: "Bank code, bank name, and account number are required" }, { status: 400 });
         }
 
-        const isTestMode = process.env.FLUTTERWAVE_SECRET_KEY && process.env.FLUTTERWAVE_SECRET_KEY.startsWith("FLWSECK_TEST-");
+        const isTestMode = !process.env.PAYSTACK_SECRET_KEY || process.env.PAYSTACK_SECRET_KEY.includes("mock") || process.env.PAYSTACK_SECRET_KEY.includes("test");
 
-        // Call Flutterwave to verify the account details on the server-side
-        const flwResponse = await fetch("https://api.flutterwave.com/v3/accounts/resolve", {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${process.env.FLUTTERWAVE_SECRET_KEY}`,
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                account_number: accountNumber,
-                account_bank: bankCode,
-            }),
-        });
+        let accountName = "TEST ACCOUNT (SANDBOX)";
+        let subaccountId = null;
 
-        const flwData = await flwResponse.json();
+        if (!isTestMode) {
+            // Call Paystack to resolve account details
+            const resolveResponse = await fetch(`https://api.paystack.co/bank/resolve?account_number=${accountNumber}&bank_code=${bankCode}`, {
+                method: "GET",
+                headers: {
+                    Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+                    "Content-Type": "application/json",
+                },
+            });
 
-        let accountName;
+            const resolveData = await resolveResponse.json();
 
-        if (!flwResponse.ok || flwData.status !== "success") {
-            console.error("Flutterwave save-bank verification failed:", flwData);
-
-            if (isTestMode) {
-                console.log("Test mode: Saving payout account with mock account name");
-                accountName = "TEST ACCOUNT (SANDBOX)";
-            } else {
-                return NextResponse.json({ error: flwData.message || "Failed to verify bank details with Flutterwave" }, { status: 400 });
+            if (!resolveResponse.ok || !resolveData.status) {
+                console.error("Paystack save-bank verification failed:", resolveData);
+                return NextResponse.json({ error: resolveData.message || "Failed to verify bank details with Paystack" }, { status: 400 });
             }
+
+            accountName = resolveData.data.account_name;
+
+            // Create new Paystack transfer recipient
+            const recipientResponse = await fetch("https://api.paystack.co/transferrecipient", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    type: "nuban",
+                    name: accountName,
+                    account_number: accountNumber,
+                    bank_code: bankCode,
+                    currency: "NGN",
+                }),
+            });
+
+            const recipientData = await recipientResponse.json();
+
+            if (!recipientResponse.ok || !recipientData.status) {
+                console.error("Paystack recipient creation failed:", recipientData);
+                return NextResponse.json({ error: recipientData.message || "Failed to create transfer recipient with Paystack" }, { status: 400 });
+            }
+
+            subaccountId = recipientData.data.recipient_code;
         } else {
-            accountName = flwData.data.account_name;
-        }
-
-        // Fetch existing payout account to see if subaccountId already exists
-        const existingPayout = await prisma.sellerPayoutAccount.findUnique({
-            where: { storeId: store.id }
-        });
-
-        const flwSplitValue = getFlutterwaveSplitValue(splitType, normalizedSplitValue);
-        let subaccountId = existingPayout?.subaccountId || null;
-        let numericId = null;
-
-        if (subaccountId && !subaccountId.startsWith("RS_MOCK_SUB_")) {
-            numericId = await getNumericIdFromSubaccountId(subaccountId, process.env.FLUTTERWAVE_SECRET_KEY);
-        }
-
-        const subaccountPayload = {
-            account_bank: bankCode,
-            account_number: accountNumber,
-            business_name: store.name,
-            business_email: store.email,
-            business_contact: store.name,
-            business_mobile: store.contact,
-            country: "NG",
-            currency: "NGN",
-            split_type: splitType,
-            split_value: flwSplitValue,
-        };
-
-        try {
-            let subaccountResponse;
-            if (subaccountId && !subaccountId.startsWith("RS_MOCK_SUB_") && numericId) {
-                console.log(`Updating existing Flutterwave subaccount: subaccount_id=${subaccountId}, numericId=${numericId}`);
-                subaccountResponse = await fetch(`https://api.flutterwave.com/v3/subaccounts/${numericId}`, {
-                    method: "PUT",
-                    headers: {
-                        Authorization: `Bearer ${process.env.FLUTTERWAVE_SECRET_KEY}`,
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify(subaccountPayload),
-                });
-            } else {
-                console.log("Creating new Flutterwave subaccount");
-                subaccountResponse = await fetch("https://api.flutterwave.com/v3/subaccounts", {
-                    method: "POST",
-                    headers: {
-                        Authorization: `Bearer ${process.env.FLUTTERWAVE_SECRET_KEY}`,
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify(subaccountPayload),
-                });
-            }
-
-            const subaccountData = await subaccountResponse.json();
-
-            if (!subaccountResponse.ok || subaccountData.status !== "success") {
-                console.error("Flutterwave subaccount update/create failed:", subaccountData);
-                if (isTestMode) {
-                    console.log("Test mode: Generating mock subaccount ID");
-                    if (!subaccountId) {
-                        subaccountId = "RS_MOCK_SUB_" + Math.random().toString(36).substring(2, 10).toUpperCase();
-                    }
-                } else {
-                    return NextResponse.json({ error: subaccountData.message || "Failed to sync subaccount with Flutterwave" }, { status: 400 });
-                }
-            } else {
-                subaccountId = subaccountData.data.subaccount_id || subaccountData.data.id || subaccountId;
-            }
-        } catch (subError) {
-            console.error("Error calling Flutterwave Subaccounts API:", subError);
-            if (isTestMode) {
-                if (!subaccountId) {
-                    subaccountId = "RS_MOCK_SUB_" + Math.random().toString(36).substring(2, 10).toUpperCase();
-                }
-            } else {
-                return NextResponse.json({ error: subError.message || "Error syncing subaccount with Flutterwave" }, { status: 500 });
-            }
+            console.log("Mock Mode: Simulating resolved account name and Paystack recipient code.");
+            subaccountId = "RCP_" + Math.random().toString(36).substring(2, 12).toUpperCase();
         }
 
         // Upsert Seller Payout Account
@@ -188,7 +93,7 @@ export async function POST(request) {
                 isVerified: true,
                 subaccountId,
                 splitType,
-                splitValue: normalizedSplitValue,
+                splitValue,
             },
             create: {
                 storeId: store.id,
@@ -199,10 +104,11 @@ export async function POST(request) {
                 isVerified: true,
                 subaccountId,
                 splitType,
-                splitValue: normalizedSplitValue,
+                splitValue,
             },
         });
 
+        console.log(`Saved payout account: storeId=${store.id}, recipient=${subaccountId}`);
         return NextResponse.json({ message: "Payout account saved successfully", payoutAccount });
 
     } catch (error) {

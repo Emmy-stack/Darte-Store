@@ -109,7 +109,7 @@ export async function POST(request) {
                         userId,
                         storeId,
                         addressId,
-                        paymentMethod: "FLUTTERWAVE",
+                        paymentMethod: "PAYSTACK",
                         isPaid: false,
                         isCouponUsed: !!coupon,
                         coupon: coupon
@@ -117,7 +117,7 @@ export async function POST(request) {
                                   code: coupon.code,
                                   discount: coupon.discount,
                                   description: coupon.description,
-                              }
+                               }
                             : {},
                         orderItems: {
                             create: storeItems.map((item) => ({
@@ -139,7 +139,7 @@ export async function POST(request) {
         }, { timeout: 60000 });
 
         const orderIds = createdOrders.map((o) => o.id);
-        const tx_ref = `flw_orders_${orderIds.join("_")}`;
+        const tx_ref = `paystack_orders_${orderIds.join("_")}`;
 
         await prisma.transaction.create({
             data: {
@@ -151,40 +151,44 @@ export async function POST(request) {
             },
         });
 
-        const flwPayload = {
-            tx_ref,
-            amount: grandTotal,
-            currency: "NGN",
-            redirect_url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/order/verify/${tx_ref}`,
-            customer: {
-                email: user.email,
-                name: user.name,
-            },
-            customizations: {
-                title: "Darté Store Checkout",
-                description: `Payment for Order(s) ${orderIds.join(", ")}`,
-                logo: `${process.env.NEXT_PUBLIC_BASE_URL}/logo.png`,
-            },
+        const isTestMode = !process.env.PAYSTACK_SECRET_KEY || process.env.PAYSTACK_SECRET_KEY.includes("mock") || process.env.PAYSTACK_SECRET_KEY.includes("test");
+
+        if (isTestMode) {
+            console.log("Mock Mode: Simulating Paystack payment initialization.");
+            return NextResponse.json({
+                checkoutUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/api/order/verify/${tx_ref}?status=successful&transaction_id=MOCK_TX_${Math.random().toString(36).substring(2, 10).toUpperCase()}&reference=${tx_ref}`,
+                orders: createdOrders,
+            });
+        }
+
+        const paystackPayload = {
+            email: user.email,
+            amount: Math.round(grandTotal * 100), // in kobo
+            callback_url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/order/verify/${tx_ref}`,
+            reference: tx_ref,
+            metadata: {
+                orderIds: orderIds.join(",")
+            }
         };
 
-        const response = await fetch("https://api.flutterwave.com/v3/payments", {
+        const response = await fetch("https://api.paystack.co/transaction/initialize", {
             method: "POST",
             headers: {
-                Authorization: `Bearer ${process.env.FLUTTERWAVE_SECRET_KEY}`,
+                Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify(flwPayload),
+            body: JSON.stringify(paystackPayload),
         });
 
-        const flwData = await response.json();
+        const paystackData = await response.json();
 
-        if (!response.ok || flwData.status !== "success") {
-            console.error("Flutterwave API Error:", flwData);
-            throw new Error(flwData.message || "Failed to initialize payment with Flutterwave");
+        if (!response.ok || !paystackData.status) {
+            console.error("Paystack API Error:", paystackData);
+            throw new Error(paystackData.message || "Failed to initialize payment with Paystack");
         }
 
         return NextResponse.json({
-            checkoutUrl: flwData.data.link,
+            checkoutUrl: paystackData.data.authorization_url,
             orders: createdOrders,
         });
     } catch (error) {
