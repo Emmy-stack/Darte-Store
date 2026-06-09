@@ -15,6 +15,9 @@ export async function GET(request) {
             return NextResponse.json({ count: 0 });
         }
 
+        const sellerUser = await prisma.user.findUnique({ where: { id: userId } });
+        const lastSeenAt = sellerUser?.lastSeenNotificationsAt || null;
+
         // Count of orders needing attention
         const count = await prisma.order.count({
             where: {
@@ -33,7 +36,8 @@ export async function GET(request) {
                         isPaid: true,
                         status: "ORDER_PLACED"
                     }
-                ]
+                ],
+                ...(lastSeenAt ? { createdAt: { gt: lastSeenAt } } : {}),
             }
         });
 

@@ -81,7 +81,15 @@ export default function StoreOrders() {
     }
 
     useEffect(() => {
-        fetchOrders()
+        const markNotificationsSeen = async () => {
+            try {
+                await fetch('/api/store/notifications/seen', { method: 'POST' });
+            } catch (err) {
+                console.error("Failed to mark notifications as seen:", err);
+            }
+        };
+        fetchOrders();
+        markNotificationsSeen();
     }, [])
 
     if (loading) return <Loading />
