@@ -1,10 +1,11 @@
 'use client'
 import { Suspense, useState, useEffect } from "react"
 import ProductCard from "@/components/ProductCard"
-import { MoveLeftIcon, Store, ArrowRight, BadgeCheck, Mail, AlertCircle, ShoppingBag } from "lucide-react"
+import { MoveLeftIcon, Store, ArrowRight, BadgeCheck, Mail, AlertCircle, ShoppingBag, SlidersHorizontal, X } from "lucide-react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useSelector } from "react-redux"
 import Hero from "@/components/Hero"
+import { categories } from "@/assets/assets"
 
 function ShopContent() {
   // get query params ?search=abc
@@ -16,6 +17,7 @@ function ShopContent() {
   const [matchingSellers, setMatchingSellers] = useState([])
   const [loadingSellers, setLoadingSellers] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const [isFilterOpen, setIsFilterOpen] = useState(false)
 
   useEffect(() => {
     setMounted(true)
@@ -78,13 +80,24 @@ function ShopContent() {
 
         {/* Header Section */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-          <h1
-            onClick={() => router.push('/shop')}
-            className="text-2xl text-slate-500 flex items-center gap-2 cursor-pointer transition hover:text-slate-700 font-semibold"
-          >
-            {search && <MoveLeftIcon size={20} className="text-slate-400" />}
-            All <span className="text-slate-800 font-bold">Products</span>
-          </h1>
+          <div className="flex items-center gap-3">
+            <h1
+              onClick={() => router.push('/shop')}
+              className="text-2xl text-slate-500 flex items-center gap-2 cursor-pointer transition hover:text-slate-700 font-semibold"
+            >
+              {search && <MoveLeftIcon size={20} className="text-slate-400" />}
+              All <span className="text-slate-800 font-bold">Products</span>
+            </h1>
+            
+            {/* Mobile Category Filter Button */}
+            <button
+              onClick={() => setIsFilterOpen(true)}
+              className="sm:hidden p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors duration-200"
+              aria-label="Filter Categories"
+            >
+              <SlidersHorizontal size={20} />
+            </button>
+          </div>
 
           {search && (
             <div className="flex items-center gap-2">
@@ -95,6 +108,60 @@ function ShopContent() {
             </div>
           )}
         </div>
+
+        {/* Mobile Filter Drawer (Bottom Sheet) */}
+        {isFilterOpen && (
+          <div className="fixed inset-0 z-50 flex items-end justify-center sm:hidden">
+            {/* Backdrop with transition */}
+            <div
+              className="fixed inset-0 bg-black/40 backdrop-blur-xs transition-opacity duration-300 animate-in fade-in"
+              onClick={() => setIsFilterOpen(false)}
+            />
+
+            {/* Bottom Sheet Container */}
+            <div className="relative w-full bg-white dark:bg-slate-950 rounded-t-3xl shadow-2xl p-6 z-10 max-h-[85vh] flex flex-col transform transition-transform duration-300 animate-in slide-in-from-bottom border-t border-slate-100 dark:border-slate-850">
+              
+              {/* Drag Handle Indicator */}
+              <div className="mx-auto w-12 h-1.5 bg-slate-300 dark:bg-slate-750 rounded-full mb-5" />
+
+              {/* Drawer Header */}
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-bold text-slate-850 dark:text-slate-100">Filter by Category</h2>
+                <button
+                  onClick={() => setIsFilterOpen(false)}
+                  className="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              {/* Category Grid / List */}
+              <div className="overflow-y-auto pb-6 flex flex-col gap-2">
+                {categories.map((category) => {
+                  const isActive = (!search && category === 'All') || (search === category);
+                  return (
+                    <button
+                      key={category}
+                      onClick={() => {
+                        router.push(category === 'All' ? '/shop' : `/shop?search=${encodeURIComponent(category)}`);
+                        setIsFilterOpen(false);
+                      }}
+                      className={`w-full text-left px-4 py-3.5 rounded-xl text-sm font-semibold transition-all flex items-center justify-between ${
+                        isActive
+                          ? 'bg-green-600 text-white shadow-md shadow-green-600/20'
+                          : 'bg-slate-50 hover:bg-slate-100 text-slate-700 dark:bg-slate-900/60 dark:hover:bg-slate-850 dark:text-slate-300'
+                      }`}
+                    >
+                      <span>{category}</span>
+                      {isActive && <div className="w-2 h-2 rounded-full bg-white animate-pulse" />}
+                    </button>
+                  );
+                })}
+              </div>
+
+            </div>
+          </div>
+        )}
 
         {/* Loading Sellers Section */}
         {search && loadingSellers && (

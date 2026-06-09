@@ -25,18 +25,8 @@ export default function Home() {
         return (
             <div className="flex items-center justify-center min-h-[60vh]">
                 <div className="flex flex-col items-center gap-4">
-                    <div
-                        style={{
-                            width: '40px',
-                            height: '40px',
-                            border: '3px solid #e2e8f0',
-                            borderTop: '3px solid #16a34a',
-                            borderRadius: '50%',
-                            animation: 'spin 0.8s linear infinite',
-                        }}
-                    />
+                    <div className="w-10 h-10 rounded-full border-3 border-zinc-200 dark:border-zinc-700/50 border-t-green-600 dark:border-t-green-500 animate-spin" />
                     <p className="text-slate-500 text-sm font-medium">Loading...</p>
-                    <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
                 </div>
             </div>
         );
