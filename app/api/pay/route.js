@@ -151,9 +151,9 @@ export async function POST(request) {
             },
         });
 
-        const isTestMode = !process.env.PAYSTACK_SECRET_KEY || process.env.PAYSTACK_SECRET_KEY.includes("mock") || process.env.PAYSTACK_SECRET_KEY.includes("test");
+        const isMockMode = !process.env.PAYSTACK_SECRET_KEY || process.env.PAYSTACK_SECRET_KEY === "mock" || process.env.PAYSTACK_SECRET_KEY.startsWith("mock");
 
-        if (isTestMode) {
+        if (isMockMode) {
             console.log("Mock Mode: Simulating Paystack payment initialization.");
             return NextResponse.json({
                 checkoutUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/api/order/verify/${tx_ref}?status=successful&transaction_id=MOCK_TX_${Math.random().toString(36).substring(2, 10).toUpperCase()}&reference=${tx_ref}`,
@@ -166,6 +166,7 @@ export async function POST(request) {
             amount: Math.round(grandTotal * 100), // in kobo
             callback_url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/order/verify/${tx_ref}`,
             reference: tx_ref,
+            channels: ["card", "bank", "ussd", "bank_transfer"],
             metadata: {
                 orderIds: orderIds.join(",")
             }

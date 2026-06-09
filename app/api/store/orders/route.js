@@ -8,9 +8,15 @@ export async function GET(request) {
         const { userId } = getAuth(request);
         const storeId = await authSeller(userId);
 
-        // Fetch all orders for the seller with related data
+        // Fetch all orders for the seller with related data (only COD or paid orders)
         const orders = await prisma.order.findMany({
-            where: { storeId },
+            where: {
+                storeId,
+                OR: [
+                    { paymentMethod: "COD" },
+                    { isPaid: true }
+                ]
+            },
             include: {
                 user: true,
                 address: true,

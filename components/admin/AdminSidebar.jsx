@@ -29,6 +29,7 @@ const AdminSidebar = () => {
         pendingStores: 0,
         pendingVerifications: 0,
         reports: 0,
+        newOrders: 0,
         total: 0,
     })
 
@@ -48,6 +49,7 @@ const AdminSidebar = () => {
                         pendingStores: data.pendingStoreCount || 0,
                         pendingVerifications: data.pendingVerificationCount || 0,
                         reports: data.reportCount || 0,
+                        newOrders: data.newOrderCount || 0,
                         total: data.total || 0,
                     })
                 }
@@ -57,12 +59,12 @@ const AdminSidebar = () => {
         }
 
         fetchNotificationCounts()
-        const interval = setInterval(fetchNotificationCounts, 30000)
+        const interval = setInterval(fetchNotificationCounts, 15000)
         return () => clearInterval(interval)
     }, [])
 
     const sidebarLinks = [
-        { name: 'Dashboard', href: '/admin', icon: HomeIcon },
+        { name: 'Dashboard', href: '/admin', icon: HomeIcon, badge: notificationCounts.newOrders },
         { name: 'Stores', href: '/admin/stores', icon: StoreIcon },
         { name: 'Approve Store', href: '/admin/approve', icon: ShieldCheckIcon, badge: notificationCounts.pendingStores },
         { name: 'Verified Sellers', href: '/admin/verified-sellers', icon: BadgeCheck, badge: notificationCounts.pendingVerifications },

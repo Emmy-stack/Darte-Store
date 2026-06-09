@@ -15,12 +15,25 @@ export async function GET(request) {
             return NextResponse.json({ count: 0 });
         }
 
-        // Count of paid orders where status is ORDER_PLACED
+        // Count of orders needing attention
         const count = await prisma.order.count({
             where: {
                 storeId,
-                isPaid: true,
-                status: "ORDER_PLACED"
+                OR: [
+                    {
+                        paymentMethod: "PAYSTACK",
+                        isPaid: true,
+                        status: "paid_pending_confirmation"
+                    },
+                    {
+                        paymentMethod: "COD",
+                        status: "ORDER_PLACED"
+                    },
+                    {
+                        isPaid: true,
+                        status: "ORDER_PLACED"
+                    }
+                ]
             }
         });
 

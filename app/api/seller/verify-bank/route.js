@@ -15,10 +15,10 @@ export async function POST(request) {
             return NextResponse.json({ error: "Bank code and account number are required" }, { status: 400 });
         }
 
-        const isTestMode = !process.env.PAYSTACK_SECRET_KEY || process.env.PAYSTACK_SECRET_KEY.includes("mock") || process.env.PAYSTACK_SECRET_KEY.includes("test");
+        const isMockMode = !process.env.PAYSTACK_SECRET_KEY || process.env.PAYSTACK_SECRET_KEY === "mock" || process.env.PAYSTACK_SECRET_KEY.startsWith("mock");
 
-        if (isTestMode) {
-            console.log("Test mode: Returning mock account resolution");
+        if (isMockMode) {
+            console.log("Mock mode: Returning mock account resolution");
             return NextResponse.json({ accountName: "TEST ACCOUNT (SANDBOX)" });
         }
 

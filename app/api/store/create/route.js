@@ -97,12 +97,12 @@ export async function POST(request) {
             return NextResponse.json({error: "Username already taken"}, {status: 400})
         }
 
-        const isTestMode = !process.env.PAYSTACK_SECRET_KEY || process.env.PAYSTACK_SECRET_KEY.includes("mock") || process.env.PAYSTACK_SECRET_KEY.includes("test");
+        const isMockMode = !process.env.PAYSTACK_SECRET_KEY || process.env.PAYSTACK_SECRET_KEY === "mock" || process.env.PAYSTACK_SECRET_KEY.startsWith("mock");
 
         let accountName = "TEST ACCOUNT (SANDBOX)";
         let subaccountId = null;
 
-        if (!isTestMode) {
+        if (!isMockMode) {
             // Call Paystack to verify the account details on the server-side
             const resolveResponse = await fetch(`https://api.paystack.co/bank/resolve?account_number=${accountNumber}&bank_code=${bankCode}`, {
                 method: "GET",

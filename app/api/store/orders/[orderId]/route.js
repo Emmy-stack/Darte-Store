@@ -11,11 +11,15 @@ export async function PATCH(request, { params }) {
         const { orderId } = await params;
         const { status } = await request.json();
 
-        // Verify the order belongs to this seller
+        // Verify the order belongs to this seller and is COD or paid
         const order = await prisma.order.findFirst({
             where: {
                 id: orderId,
                 storeId,
+                OR: [
+                    { paymentMethod: "COD" },
+                    { isPaid: true }
+                ]
             },
         });
 

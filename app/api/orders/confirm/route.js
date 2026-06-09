@@ -38,9 +38,10 @@ export async function POST(request) {
             return NextResponse.json({ message: "Order is already completed", order });
         }
 
-        if (order.status !== "paid_pending_confirmation") {
+        const allowedStatuses = ["paid_pending_confirmation", "PROCESSING", "SHIPPED", "DELIVERED"];
+        if (!allowedStatuses.includes(order.status)) {
             return NextResponse.json({ 
-                error: `Order cannot be confirmed. Current status is '${order.status}', but must be 'paid_pending_confirmation'` 
+                error: `Order cannot be confirmed. Current status is '${order.status}', but must be one of: ${allowedStatuses.join(', ')}` 
             }, { status: 400 });
         }
 

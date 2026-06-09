@@ -139,7 +139,7 @@ const Navbar = () => {
         }
       };
       fetchNotifications();
-      const interval = setInterval(fetchNotifications, 30000);
+      const interval = setInterval(fetchNotifications, 15000);
       return () => clearInterval(interval);
     } else {
       setNotificationCount(0);
@@ -160,7 +160,7 @@ const Navbar = () => {
         }
       };
       fetchAdminNotifications();
-      const interval = setInterval(fetchAdminNotifications, 30000);
+      const interval = setInterval(fetchAdminNotifications, 15000);
       return () => clearInterval(interval);
     } else {
       setAdminNotificationCount(0);
@@ -285,9 +285,11 @@ const Navbar = () => {
               >
                 Store
                 {notificationCount > 0 && (
-                  <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                  <span className="absolute -top-1 -right-2 inline-flex items-center justify-center">
+                    <span className="animate-ping absolute inline-flex h-5 min-w-[1.25rem] rounded-full bg-red-400 opacity-75"></span>
+                    <span className="relative inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-semibold text-white">
+                      {notificationCount > 9 ? '9+' : notificationCount}
+                    </span>
                   </span>
                 )}
               </Link>
@@ -386,8 +388,8 @@ const Navbar = () => {
                   aria-label="Menu"
                 >
                   {menuOpen ? <X size={20} className="text-slate-700" /> : <Menu size={20} className="text-slate-700" />}
-                  {!menuOpen && notificationCount > 0 && (
-                    <span className="absolute top-1 right-1 flex h-2.5 w-2.5">
+                  {!menuOpen && (notificationCount > 0 || adminNotificationCount > 0) && (
+                    <span className="absolute top-0 right-0 flex h-2.5 w-2.5">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                       <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
                     </span>

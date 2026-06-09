@@ -40,10 +40,10 @@ export async function POST(request) {
             if (payoutAccount && !payoutAccount.subaccountId && payoutAccount.bankCode && payoutAccount.accountNumber) {
                 console.log(`On-the-fly recipient registration on approval for Store ${storeId}`);
                 try {
-                    const isTestMode = !process.env.PAYSTACK_SECRET_KEY || process.env.PAYSTACK_SECRET_KEY.includes("mock") || process.env.PAYSTACK_SECRET_KEY.includes("test");
+                    const isMockMode = !process.env.PAYSTACK_SECRET_KEY || process.env.PAYSTACK_SECRET_KEY === "mock" || process.env.PAYSTACK_SECRET_KEY.startsWith("mock");
                     let subaccountId = null;
 
-                    if (!isTestMode) {
+                    if (!isMockMode) {
                         const subRes = await fetch("https://api.paystack.co/transferrecipient", {
                             method: "POST",
                             headers: {

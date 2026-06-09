@@ -1,8 +1,8 @@
- 'use client'
+'use client'
 import { useEffect, useState } from "react"
 import Loading from "@/components/Loading"
 import formatPrice from '@/lib/formatPrice'
- 
+
 export default function StoreOrders() {
     const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '₦'
     const [orders, setOrders] = useState([])
@@ -19,11 +19,11 @@ export default function StoreOrders() {
             setLoading(true)
             setError(null)
             const response = await fetch('/api/store/orders')
-            
+
             if (!response.ok) {
                 throw new Error('Failed to fetch orders')
             }
-            
+
             const data = await response.json()
             setOrders(data.orders || [])
         } catch (err) {
@@ -50,10 +50,10 @@ export default function StoreOrders() {
             }
 
             const data = await response.json()
-            
+
             // Update the orders list with the new status
-            setOrders(orders.map(order => 
-                order.id === orderId 
+            setOrders(orders.map(order =>
+                order.id === orderId
                     ? { ...order, status: newStatus }
                     : order
             ))
@@ -85,7 +85,7 @@ export default function StoreOrders() {
     }, [])
 
     if (loading) return <Loading />
-    
+
     if (error) {
         return (
             <div className="text-center py-10">
@@ -93,7 +93,7 @@ export default function StoreOrders() {
                 <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/30 text-red-700 dark:text-red-400 px-4 py-3 rounded">
                     {error}
                 </div>
-                <button 
+                <button
                     onClick={fetchOrders}
                     className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 dark:hover:bg-blue-400 transition"
                 >
@@ -141,14 +141,14 @@ export default function StoreOrders() {
                                         )}
                                     </td>
                                     <td className="px-4 py-3" onClick={(e) => { e.stopPropagation() }}>
-                                        {['DELIVERED', 'DELIVERY_CONFIRMED', 'DELIVERY_DENIED'].includes(order.status) ? (
+                                        {['completed', 'DELIVERED', 'DELIVERY_CONFIRMED', 'DELIVERY_DENIED'].includes(order.status) ? (
                                             <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                                                order.status === 'DELIVERY_CONFIRMED'
+                                                ['completed', 'DELIVERY_CONFIRMED'].includes(order.status)
                                                     ? 'bg-green-100 dark:bg-green-950/20 text-green-700 dark:text-green-400'
                                                     : order.status === 'DELIVERY_DENIED'
-                                                    ? 'bg-red-100 dark:bg-red-950/20 text-red-700 dark:text-red-400'
-                                                    : 'bg-yellow-100 dark:bg-yellow-950/20 text-yellow-700 dark:text-yellow-400'
-                                            }`}>
+                                                        ? 'bg-red-100 dark:bg-red-950/20 text-red-700 dark:text-red-400'
+                                                        : 'bg-yellow-100 dark:bg-yellow-950/20 text-yellow-700 dark:text-yellow-400'
+                                                }`}>
                                                 {order.status.replace(/_/g, ' ')}
                                             </span>
                                         ) : (
@@ -165,10 +165,21 @@ export default function StoreOrders() {
                                                 disabled={updating}
                                                 className="border border-gray-300 dark:border-slate-700 rounded-md text-sm px-2 py-1 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring focus:ring-blue-200 disabled:bg-gray-100 dark:disabled:bg-slate-900 disabled:cursor-not-allowed"
                                             >
-                                                <option value="ORDER_PLACED">ORDER_PLACED</option>
-                                                <option value="PROCESSING">PROCESSING</option>
-                                                <option value="SHIPPED">SHIPPED</option>
-                                                <option value="DELIVERED">DELIVERED</option>
+                                                {order.paymentMethod === 'PAYSTACK' ? (
+                                                    <>
+                                                        <option value="paid_pending_confirmation">paid_pending_confirmation</option>
+                                                        <option value="PROCESSING">PROCESSING</option>
+                                                        <option value="SHIPPED">SHIPPED</option>
+                                                        <option value="DELIVERED">DELIVERED</option>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <option value="ORDER_PLACED">ORDER_PLACED</option>
+                                                        <option value="PROCESSING">PROCESSING</option>
+                                                        <option value="SHIPPED">SHIPPED</option>
+                                                        <option value="DELIVERED">DELIVERED</option>
+                                                    </>
+                                                )}
                                             </select>
                                         )}
                                     </td>

@@ -31,7 +31,7 @@ const StoreSidebar = ({storeInfo, setStoreInfo}) => {
             }
         }
         fetchNotifications()
-        const interval = setInterval(fetchNotifications, 30000)
+        const interval = setInterval(fetchNotifications, 15000)
         return () => clearInterval(interval)
     }, [])
 

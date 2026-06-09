@@ -70,7 +70,17 @@ export default function AdminDashboard() {
     }
 
     useEffect(() => {
-        fetchDashboardData()
+        const markNotificationsSeen = async () => {
+            try {
+                await axios.post("/api/admin/notifications/seen", {}, {
+                    withCredentials: true
+                });
+            } catch (error) {
+                console.error("Failed to mark notifications as seen on dashboard:", error);
+            }
+        };
+        markNotificationsSeen();
+        fetchDashboardData();
     }, [])
 
     if (loading) return <Loading />

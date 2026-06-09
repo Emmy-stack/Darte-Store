@@ -123,7 +123,7 @@ const OrderItem = ({ order }) => {
                         <DotIcon size={10} className="scale-250" />
                         {order.status.split('_').join(' ').toLowerCase()}
                     </div>
-                    {order.status === 'paid_pending_confirmation' && (
+                    {['paid_pending_confirmation', 'PROCESSING', 'SHIPPED', 'DELIVERED'].includes(order.status) && (
                         <div className="flex flex-col gap-2 mt-2">
                             <button
                                 onClick={handleConfirmDelivery}
@@ -154,7 +154,7 @@ const OrderItem = ({ order }) => {
                         }`}>
                             {order.status.replace(/_/g, ' ').toLowerCase()}
                         </span>
-                        {order.status === 'paid_pending_confirmation' && (
+                        {['paid_pending_confirmation', 'PROCESSING', 'SHIPPED', 'DELIVERED'].includes(order.status) && (
                             <div className="flex gap-4 mt-2 w-full justify-center">
                                 <button
                                     onClick={handleConfirmDelivery}

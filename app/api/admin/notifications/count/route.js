@@ -36,13 +36,35 @@ export async function GET(request) {
             }
         });
 
-        const total = pendingStoreCount + pendingVerificationCount + reportCount;
+        const newOrderCount = await prisma.order.count({
+            where: {
+                OR: [
+                    {
+                        paymentMethod: "PAYSTACK",
+                        isPaid: true,
+                        status: "paid_pending_confirmation"
+                    },
+                    {
+                        paymentMethod: "COD",
+                        status: "ORDER_PLACED"
+                    },
+                    {
+                        isPaid: true,
+                        status: "ORDER_PLACED"
+                    }
+                ],
+                ...(lastSeenAt ? { createdAt: { gt: lastSeenAt } } : {}),
+            }
+        });
+
+        const total = pendingStoreCount + pendingVerificationCount + reportCount + newOrderCount;
 
         return NextResponse.json({
             total,
             pendingStoreCount,
             pendingVerificationCount,
             reportCount,
+            newOrderCount,
         });
     } catch (error) {
         console.error(error);

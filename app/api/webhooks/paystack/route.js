@@ -5,14 +5,14 @@ import crypto from "crypto";
 export async function POST(request) {
     try {
         const signature = request.headers.get("x-paystack-signature");
-        const isTestMode = !process.env.PAYSTACK_SECRET_KEY || 
-            process.env.PAYSTACK_SECRET_KEY.includes("mock") || 
-            process.env.PAYSTACK_SECRET_KEY.includes("test");
+        const isMockMode = !process.env.PAYSTACK_SECRET_KEY || 
+            process.env.PAYSTACK_SECRET_KEY === "mock" || 
+            process.env.PAYSTACK_SECRET_KEY.startsWith("mock");
 
         let bodyText = "";
         let body = {};
 
-        if (!isTestMode) {
+        if (!isMockMode) {
             if (!signature) {
                 console.error("Missing x-paystack-signature header");
                 return NextResponse.json({ error: "Missing signature" }, { status: 400 });

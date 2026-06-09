@@ -16,13 +16,13 @@ export async function GET(request, context) {
 
         const actualRef = reference || tx_ref;
 
-        const isTestMode = !process.env.PAYSTACK_SECRET_KEY || 
-            process.env.PAYSTACK_SECRET_KEY.includes("mock") || 
-            process.env.PAYSTACK_SECRET_KEY.includes("test");
+        const isMockMode = !process.env.PAYSTACK_SECRET_KEY || 
+            process.env.PAYSTACK_SECRET_KEY === "mock" || 
+            process.env.PAYSTACK_SECRET_KEY.startsWith("mock");
 
         let transaction_id = reference || "MOCK_TX_" + Math.random().toString(36).substring(2, 10).toUpperCase();
 
-        if (!isTestMode) {
+        if (!isMockMode) {
             // Call Paystack to verify the transaction
             const response = await fetch(`https://api.paystack.co/transaction/verify/${actualRef}`, {
                 method: "GET",
